@@ -3,11 +3,14 @@ name: Release
 on:
   push:
     branches: [master]
-    tags: ['v*']
   workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   release:

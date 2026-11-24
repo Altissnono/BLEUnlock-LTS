@@ -1,8 +1,9 @@
 # BLEUnlock
 
-![CI](https://github.com/ts1/BLEUnlock/workflows/CI/badge.svg)
-![Github All Releases](https://img.shields.io/github/downloads/ts1/BLEUnlock/total.svg)
-[![Buy me a coffee](img/buymeacoffee.svg)](https://www.buymeacoffee.com/tsone)
+![CI](https://github.com/Altissnono/BLEUnlock-LTS/actions/workflows/test.yml/badge.svg)
+[![Latest release](https://img.shields.io/github/v/release/Altissnono/BLEUnlock-LTS?display_name=tag&cacheSeconds=300)](https://github.com/Altissnono/BLEUnlock-LTS/releases/latest)
+
+> **BLEUnlock LTS**: [ts1/BLEUnlock](https://github.com/ts1/BLEUnlock) のメンテナンス版フォークです（macOS 12以降、「ロックのみ」モード、セキュリティ強化、多言語対応）。詳細は[英語版README](README.md)をご覧ください。
 
 BLEUnlockはiPhone, Apple Watchやその他のBluetooth Low Energyデバイスの距離によってMacをロック・アンロックする小さなメニューバーユーティリティーです。
 
@@ -33,7 +34,7 @@ $ brew install bleunlock
 
 ### 手動でインストールする方法
 
-[Releases](https://github.com/ts1/BLEUnlock/releases)からzipファイルをダウンロードし、解凍してアプリケーションフォルダに移動します。
+[Releases](https://github.com/Altissnono/BLEUnlock-LTS/releases)からzipファイルをダウンロードし、解凍してアプリケーションフォルダに移動します。
 
 ## セットアップ
 
@@ -225,12 +226,6 @@ do shell script "/usr/local/bin/ffmpeg -f avfoundation -r 30 -i 0 -frames:v 1 -y
 ```
 
 このappはBLEUnlockにカメラのパーミッションがないため必要となります。このappにパーミッションを与えることによりパーミッションの問題を回避できます。
-
-## FUNDING
-
-Apple Developer Programの年間費用は、寄付金で賄われています。
-
-もしこのアプリを気に入っていただけたら、継続できるよう、[Buy Me a Coffee](https://www.buymeacoffee.com/tsone) もしくは [PayPal.Me](https://paypal.me/takeshisone) で寄付をしていただけるとありがたいです。
 
 ## クレジット
 
