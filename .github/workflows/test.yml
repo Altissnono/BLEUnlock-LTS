@@ -1,13 +1,16 @@
 name: CI
 
-on: [push]
+on:
+  push:
+    branches: [master]
+  pull_request:
 
 jobs:
   build:
-
-    runs-on: macOS-latest
-    
+    runs-on: macos-latest
     steps:
-    - uses: actions/checkout@master
-    - name: Start xcodebuild test
-      run: xcodebuild clean build -project BLEUnlock.xcodeproj -scheme BLEUnlock
+      - uses: actions/checkout@v4
+      - name: Build
+        run: |
+          xcodebuild clean build -project BLEUnlock.xcodeproj -scheme BLEUnlock \
+            -configuration Release CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= CODE_SIGN_STYLE=Manual
