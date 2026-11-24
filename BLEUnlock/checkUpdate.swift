@@ -4,6 +4,7 @@ import UserNotifications
 let repoSlug = "Altissnono/BLEUnlock-LTS"
 let releasesURL = URL(string: "https://github.com/\(repoSlug)/releases")!
 let lockNotificationId = "ble.lock"
+let unlockNotificationId = "ble.unlock"
 let updateNotificationId = "ble.update"
 
 private let KEY = "lastUpdateCheck"
@@ -37,7 +38,8 @@ private func doCheckUpdate(force: Bool) {
     let task = URLSession.shared.dataTask(with: request, completionHandler: { data, response, error in
         guard let jsondata = data,
               let dict = (try? JSONSerialization.jsonObject(with: jsondata)) as? [String: Any],
-              let version = dict["tag_name"] as? String else {
+              let version = dict["tag_name"] as? String,
+              version.range(of: #"^v?\d+(\.\d+){0,3}(-[0-9A-Za-z.]+)?$"#, options: .regularExpression) != nil else {
             if force { DispatchQueue.main.async { deliverNotification(id: updateNotificationId, subtitle: t("update_check_failed"), body: "") } }
             return
         }
