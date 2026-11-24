@@ -73,3 +73,8 @@ private func compareVersionsAndNotify(_ latestVersion: String, force: Bool) {
         deliverNotification(id: updateNotificationId, subtitle: t("up_to_date"), body: version)
     }
 }
+
+#if !DEBUG
+/// Release builds: no console logging (avoids leaking state into system logs).
+@inline(__always) func print(_ items: Any..., separator: String = " ", terminator: String = "\n") {}
+#endif

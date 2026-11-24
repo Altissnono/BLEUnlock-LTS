@@ -37,6 +37,21 @@
 "wake_on_proximity" = "Wake on Proximity";
 "wake_without_unlocking" = "Wake without Unlocking";
 
+"mode" = "Mode";
+"mode_full" = "Lock & Unlock";
+"mode_lock_only" = "Lock only";
+"proximity" = "Proximity";
+"security" = "Security";
+"options" = "Options";
+"remove_password" = "Remove Stored Password";
+"remove_password_confirm" = "Remove the stored password?";
+"remove_password_info" = "BLEUnlock will no longer be able to unlock your Mac until you set a password again.";
+"remove" = "Remove";
+"switch" = "Switch";
+"lock_only_confirm" = "Switch to “Lock only”?";
+"lock_only_info" = "The password stored in Keychain will be deleted and BLEUnlock will no longer unlock your Mac. Accessibility permission is not needed in this mode.";
+"welcome_title" = "Welcome to BLEUnlock";
+"welcome_info" = "Choose how BLEUnlock should work. “Lock only” never asks for or stores your password. You can change this anytime in the Mode menu.";
 "notifications" = "Notifications";
 "check_for_updates" = "Check for Updates";
 "up_to_date" = "BLEUnlock is up to date.";

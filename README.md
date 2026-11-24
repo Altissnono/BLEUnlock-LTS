@@ -22,6 +22,9 @@ This document is also available in [Japanese (日本語版はこちら)](README.
 - Optionally wakes from display sleep
 - Optionally pauses and unpauses music/video playback when you're away and back
 - Password is securely stored in Keychain
+- **Two modes**: *Lock & Unlock*, or *Lock only* — in lock-only mode no password is ever asked for or stored, and no Accessibility permission is needed
+- Menu organised in *Device / Mode / Proximity / Security / Options* with SF Symbols
+- Languages: English, Français, Español, Deutsch, 日本語, 简体中文, Türkçe, Svenska, Dansk, Norsk
 
 ## Requirements
 
@@ -227,17 +230,34 @@ Copyright © 2019-2022 Takeshi Sone. LTS modifications © 2026 Altissnono.
 
 ## What's new in LTS
 
-**1.14.1** – About box shows LTS name and credits.
+### 2.0.0
+**New**
+- *Lock only* mode (no password stored, no Accessibility permission) alongside *Lock & Unlock*; chosen on first launch, switchable anytime from the **Mode** menu. Switching to lock-only deletes the stored password.
+- Redesigned menu: grouped submenus with SF Symbols, status line, *Remove Stored Password*.
+- New app icon (blue gradient, signal arcs).
+- French and Spanish localizations; all new strings translated in every supported language.
 
-**1.14.0 – security**
-- Auto-unlock lockout: stops typing the password after N failed attempts (default 3 in 2 min) until you unlock manually.
-- Unlock confirmation delay: the device must still be near after 0–10 s before the password is typed.
-- The optional `event` script only runs if owned by you and not group/world-writable.
-- Password buffer is wiped and freed after typing; Keychain item is `ThisDeviceOnly`; no force-unwraps on password handling.
+**Security**
+- Never types the password if the session is not on the console (fast user switching).
+- Least privilege: Accessibility permission only requested when unlocking is enabled.
+- Stored settings are range-checked (RSSI, delays); RSSI threshold input is validated.
+- Release builds do not log to the console.
+
+### 1.14.1
+- About box shows the LTS name and fork copyright.
+
+### 1.14.0
+**Security**
+- Auto-unlock lockout after N failed attempts (default 3 in 2 min) until you unlock manually.
+- Unlock confirmation delay (0–10 s): the device must still be near before the password is typed.
+- Optional `event` script only runs if owned by you and not group/world-writable.
+- Password buffer wiped and freed after typing; Keychain item is `ThisDeviceOnly`; no force-unwraps.
 - Removed the unused Apple Events entitlement; update check validates the release tag.
 
-**1.14.0 – customization**
-- Show signal strength in the menu bar, notification toggles (lock / unlock), "Check for Updates" item.
+**Customization**: signal strength in the menu bar, notification toggles, "Check for Updates".
 
-**1.13.0 – maintenance**
-- `UserNotifications`, `SMAppService`, no deprecated APIs; update checker points to this fork.
+### 1.13.0
+- `UserNotifications`, `SMAppService`, no deprecated APIs; update checker points to this fork; macOS 12+.
+
+---
+Maintained by [Altissnono](https://github.com/Altissnono). Original project by [Takeshi Sone](https://github.com/ts1/BLEUnlock).
