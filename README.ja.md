@@ -26,14 +26,6 @@ BLEUnlockはiPhone, Apple Watchやその他のBluetooth Low Energyデバイス�
 
 ## インストール
 
-### Homebrew Caskを使う方法
-
-```
-$ brew install bleunlock
-```
-
-### 手動でインストールする方法
-
 [Releases](https://github.com/Altissnono/BLEUnlock-LTS/releases)からzipファイルをダウンロードし、解凍してアプリケーションフォルダに移動します。
 
 ## セットアップ
