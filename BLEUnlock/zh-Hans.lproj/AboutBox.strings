@@ -1,5 +1,5 @@
 /* Class = "NSTextFieldCell"; title = "BLEUnlock version #{version}"; ObjectID = "VLW-23-BX0"; */
-"VLW-23-BX0.title" = "BLEUnlock 版本 #{version}";
+"VLW-23-BX0.title" = "BLEUnlock LTS 版本 #{version}";
 
 /* Class = "NSButtonCell"; title = "Check Releases"; ObjectID = "WIg-Gy-UeI"; */
 "WIg-Gy-UeI.title" = "版本检查";
