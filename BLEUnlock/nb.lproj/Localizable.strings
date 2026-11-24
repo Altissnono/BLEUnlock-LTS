@@ -69,3 +69,13 @@
 "update_available_info" = "Versjon %@ er tilgjengelig (du har %@).";
 "download" = "Last ned";
 "later" = "Senere";
+"automatic_updates" = "Automatisk oppdateringssjekk";
+"update_consent_title" = "Se etter oppdateringer automatisk?";
+"update_consent_info" = "BLEUnlock kan kontakte GitHub (api.github.com) én gang om dagen for å se om det finnes en ny versjon. IP-adressen din er da synlig for GitHub. Ingenting annet sendes. Du kan endre dette når som helst under Valg.";
+"allow" = "Tillat";
+"no_thanks" = "Nei takk";
+"erase_data" = "Slett alle data…";
+"erase_data_confirm" = "Slette alle BLEUnlock-data?";
+"erase_data_info" = "Det lagrede passordet, alle innstillinger og påloggingselementet slettes, og BLEUnlock avsluttes.";
+"erase" = "Slett";
+"privacy_policy" = "Personvernerklæring";

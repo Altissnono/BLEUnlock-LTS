@@ -1,10 +1,14 @@
 # BLEUnlock
 
-## BLEUnlock LTS — this app is not distributed on the Mac App Store. Download it here for free.
+## 🇪🇺 BLEUnlock LTS — privacy‑first, EU‑friendly proximity lock for macOS
+
+*Not on the Mac App Store. Free and open source (MIT).*
 
 ![CI](https://github.com/Altissnono/BLEUnlock-LTS/actions/workflows/test.yml/badge.svg)
 [![Latest release](https://img.shields.io/github/v/release/Altissnono/BLEUnlock-LTS?display_name=tag&cacheSeconds=300)](https://github.com/Altissnono/BLEUnlock-LTS/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/Altissnono/BLEUnlock-LTS/total?cacheSeconds=300)](https://github.com/Altissnono/BLEUnlock-LTS/releases)
+
+![GDPR friendly](https://img.shields.io/badge/%F0%9F%87%AA%F0%9F%87%BA-GDPR--friendly-003399?labelColor=FFCC00) ![No telemetry](https://img.shields.io/badge/telemetry-none-brightgreen) ![No third-party deps](https://img.shields.io/badge/dependencies-0-brightgreen) ![Hardened Runtime](https://img.shields.io/badge/Hardened%20Runtime-on-blue) ![Languages](https://img.shields.io/badge/languages-10-informational)
 
 BLEUnlock LTS is a maintained fork of [ts1/BLEUnlock](https://github.com/ts1/BLEUnlock) (MIT) with modernized APIs, extra security hardening and more settings. See [What's new in LTS](#whats-new-in-lts).
 
@@ -136,7 +140,7 @@ To check if the MAC address is resolved correctly, compare the MAC address displ
 On locking and unlocking, BLEUnlock runs a script located here:
 
 ```
-~/Library/Application Scripts/jp.sone.BLEUnlock/event
+~/Library/Application Scripts/io.github.altissnono.BLEUnlock/event
 ```
 
 An argument is passed depending on the type of event:
@@ -228,7 +232,36 @@ MIT
 
 Copyright © 2019-2022 Takeshi Sone. LTS modifications © 2026 Altissnono.
 
+
+## 🇪🇺 Privacy, GDPR & EU
+
+> This is a technical description of how the app behaves, not a legal certification.
+
+- **Local‑only by design** — no account, no analytics, no ads, no crash reporting, no server run by the maintainer. Nothing about you is collected ([Privacy Policy / Politique de confidentialité](PRIVACY.md), EN + FR).
+- **Data minimisation** — new **Lock only** mode never asks for or stores a password and needs no Accessibility permission.
+- **Consent by default off** — the only network feature (update check, one HTTPS call to `api.github.com`) is **opt‑in**, refuses redirects, uses no cookies/cache and sends nothing but your IP address (as any web request does). CI fails if any other host appears in the code.
+- **Right to erasure built in** — *Security → Erase All Data…* wipes the Keychain password, settings and login item in one click.
+- **Privacy manifest** (`PrivacyInfo.xcprivacy`): no tracking, no collected data types.
+- **EU languages** — English, Français, Español, Deutsch, Svenska, Dansk, Norsk (+ 日本語, 简体中文, Türkçe).
+- **Independent identity** — bundle id `io.github.altissnono.BLEUnlock` (no upstream/third‑country identifiers).
+- **Honest limits** — releases are hosted on GitHub (United States); downloading or checking for updates exposes your IP to GitHub. Build from source if you want zero contact. The app itself contacts no server in Asia or anywhere else.
+
+| | |
+|---|---|
+| Third‑party code | **0** dependencies |
+| Network hosts contacted | `api.github.com` only, opt‑in |
+| Data sent | IP address only (inherent to HTTPS) |
+| Data stored | Keychain password (unlock mode), settings, chosen device UUID — all local |
+| Telemetry / tracking | none |
+
 ## What's new in LTS
+
+### 3.0.0 — 🇪🇺 privacy release
+- **Breaking:** new bundle identifier `io.github.altissnono.BLEUnlock` (replaces the upstream `jp.sone.*`). Settings, Keychain password, login item and the `event` script folder (`~/Library/Application Scripts/io.github.altissnono.BLEUnlock/`) start fresh — re‑select your device and re‑enter the password once.
+- Update checks are now **opt‑in** (consent prompt), hardened (ephemeral session, no redirects, size/host checks), plus *Automatic Update Checks* toggle.
+- **Erase All Data…**, **Privacy Policy** menu item, `PRIVACY.md` (EN/FR), privacy manifest.
+- Signing/notarisation: `scripts/notarize-release.sh` and CI support for Developer ID + notarisation when repository secrets are set.
+- CI checks extended (single allowed host, no tracking SDKs, opt‑in network, erase feature, privacy manifest).
 
 ### 2.0.1
 - Update check reworked: the *Check for Updates* item now always answers with a dialog (update available / up to date / failed) and a *Download* button; an automatic check also adds an "Update Available" item to the menu. It no longer depends on notification permission.

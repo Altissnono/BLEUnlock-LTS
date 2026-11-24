@@ -27,6 +27,8 @@ func deliverNotification(id: String, subtitle: String, body: String, delay: Time
 
 func checkUpdate(force: Bool = false) {
     if !force {
+        // Privacy: automatic (unprompted) network access happens only if the user opted in.
+        guard UserDefaults.standard.bool(forKey: "updateChecks") else { return }
         guard !notified else { return }
         let now = NSDate().timeIntervalSince1970
         guard now - lastCheckAt >= INTERVAL else { return }
@@ -34,12 +36,34 @@ func checkUpdate(force: Bool = false) {
     doCheckUpdate(force: force)
 }
 
+/// Refuses every HTTP redirect: the only host ever contacted is api.github.com.
+private final class NoRedirect: NSObject, URLSessionTaskDelegate {
+    func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
+                    newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) {
+        completionHandler(nil)
+    }
+}
+private let noRedirect = NoRedirect()
+
+private let updateSession: URLSession = {
+    // Ephemeral: no cookies, no disk cache, no credentials storage; nothing persisted about the request.
+    let cfg = URLSessionConfiguration.ephemeral
+    cfg.httpCookieStorage = nil
+    cfg.urlCache = nil
+    cfg.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+    cfg.timeoutIntervalForRequest = 15
+    cfg.timeoutIntervalForResource = 30
+    cfg.waitsForConnectivity = false
+    cfg.httpAdditionalHeaders = ["User-Agent": "BLEUnlock-LTS", "Accept": "application/vnd.github+json"]
+    return URLSession(configuration: cfg, delegate: noRedirect, delegateQueue: nil)
+}()
+
 private func doCheckUpdate(force: Bool) {
-    var request = URLRequest(url: URL(string: "https://api.github.com/repos/\(repoSlug)/releases/latest")!)
-    request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
-    request.timeoutInterval = 15
-    let task = URLSession.shared.dataTask(with: request, completionHandler: { data, response, error in
-        guard let jsondata = data,
+    let url = URL(string: "https://api.github.com/repos/\(repoSlug)/releases/latest")!
+    let task = updateSession.dataTask(with: URLRequest(url: url), completionHandler: { data, response, error in
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200,
+              http.url?.host == "api.github.com",
+              let jsondata = data, jsondata.count < 1_000_000,
               let dict = (try? JSONSerialization.jsonObject(with: jsondata)) as? [String: Any],
               let version = dict["tag_name"] as? String,
               version.range(of: #"^v?\d+(\.\d+){0,3}(-[0-9A-Za-z.]+)?$"#, options: .regularExpression) != nil else {

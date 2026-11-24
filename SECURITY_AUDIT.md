@@ -209,3 +209,13 @@ See *Missing Tests*. Also: manual red‑team test with a BLE spoofing tool (e.g.
 # Final Assessment
 
 For a local proximity‑unlock utility the implementation is **careful and small**, has no third‑party dependencies, no server surface, and the dangerous operations (password storage, keystroke injection, script execution) are now guarded at several layers and optional via *Lock only* mode. The **dominant risk is architectural** (RSSI as the sole factor, V‑01) and cannot be eliminated in code. The **largest engineering gap is the absence of automated behavioural tests** and the **lack of notarised distribution**. Items marked *Not verifiable* (git‑history secret scan, thread‑safety under sanitizers, frontmost‑app behaviour across macOS versions, real‑world BLE spoofing difficulty) were not claimed secure.
+
+---
+
+# Addendum — 3.0.0 privacy / EU review
+
+- **Network inventory (confirmed by CI regex):** the code references only `github.com` (links opened in the browser on click) and `api.github.com` (update check). No other host, no SDK with network code, no tracking/analytics identifiers. *No endpoint in Asia or any other third country is contacted by the app.* The remaining third‑country exposure is **GitHub itself** (US) when the user opts in to update checks or downloads a release.
+- **Data flow:** none leaves the device except the IP address with the opt‑in request. Update check: ephemeral `URLSession` (no cookie jar, no URL cache), redirects refused, host and status verified, body capped at 1 MB, tag regex‑validated.
+- **Identity:** bundle id changed from the upstream `jp.sone.*` to `io.github.altissnono.*` (side effect: a one‑time reset of settings/Keychain/TCC for existing installs).
+- **V‑03 (notarisation):** tooling now exists (`scripts/notarize-release.sh`, conditional CI steps). **Still open until the owner creates the Developer ID Application certificate and, for CI, the five repository secrets** — no certificate of that type is present on this Mac, so notarisation was **not performed or tested**.
+- **New residual risks:** "Erase All Data" quits the app (intended); same‑user processes can still alter `updateChecks`/consent (V‑09 class). GDPR compliance as a legal status is **not asserted**: no DPIA/lawyer review was done.

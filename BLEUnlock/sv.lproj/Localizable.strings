@@ -69,3 +69,13 @@
 "update_available_info" = "Version %@ finns (du har %@).";
 "download" = "Hämta";
 "later" = "Senare";
+"automatic_updates" = "Automatisk uppdateringskontroll";
+"update_consent_title" = "Söka efter uppdateringar automatiskt?";
+"update_consent_info" = "BLEUnlock kan kontakta GitHub (api.github.com) en gång om dagen för att se om det finns en ny version. Din IP-adress är då synlig för GitHub. Inget annat skickas. Du kan ändra detta när som helst under Alternativ.";
+"allow" = "Tillåt";
+"no_thanks" = "Nej tack";
+"erase_data" = "Radera all data…";
+"erase_data_confirm" = "Radera all BLEUnlock-data?";
+"erase_data_info" = "Det sparade lösenordet, alla inställningar och inloggningsobjektet raderas, därefter avslutas BLEUnlock.";
+"erase" = "Radera";
+"privacy_policy" = "Integritetspolicy";

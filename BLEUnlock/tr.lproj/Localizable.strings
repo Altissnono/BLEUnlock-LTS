@@ -69,3 +69,13 @@
 "update_available_info" = "%@ sürümü mevcut (sizde %@ var).";
 "download" = "İndir";
 "later" = "Daha Sonra";
+"automatic_updates" = "Otomatik Güncelleme Denetimi";
+"update_consent_title" = "Güncellemeler otomatik denetlensin mi?";
+"update_consent_info" = "BLEUnlock yeni sürüm olup olmadığını görmek için günde bir kez GitHub’a (api.github.com) bağlanabilir. Bu sırada IP adresiniz GitHub tarafından görülür. Başka hiçbir şey gönderilmez. Seçenekler’den istediğiniz zaman değiştirebilirsiniz.";
+"allow" = "İzin Ver";
+"no_thanks" = "Hayır, Teşekkürler";
+"erase_data" = "Tüm Verileri Sil…";
+"erase_data_confirm" = "Tüm BLEUnlock verileri silinsin mi?";
+"erase_data_info" = "Kayıtlı parola, tüm ayarlar ve oturum açma öğesi silinir, ardından BLEUnlock kapanır.";
+"erase" = "Sil";
+"privacy_policy" = "Gizlilik Politikası";

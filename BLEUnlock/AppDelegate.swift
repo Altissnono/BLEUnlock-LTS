@@ -738,6 +738,42 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         checkUpdate(force: true)
     }
 
+    @objc func toggleAutoUpdates(_ menuItem: NSMenuItem) {
+        let value = !prefs.bool(forKey: "updateChecks")
+        prefs.set(value, forKey: "updateChecks")
+        menuItem.state = value ? .on : .off
+    }
+
+    @objc func openPrivacy() {
+        NSWorkspace.shared.open(URL(string: "https://github.com/\(repoSlug)/blob/master/PRIVACY.md")!)
+    }
+
+    /// GDPR right to erasure: removes the Keychain password, all settings and the login item, then quits.
+    @objc func eraseAllData() {
+        guard confirm(t("erase_data_confirm"), info: t("erase_data_info"), button: t("erase")) else { return }
+        deleteStoredPassword()
+        if #available(macOS 13.0, *) { try? SMAppService.mainApp.unregister() }
+        else { SMLoginItemSetEnabled(Bundle.main.bundleIdentifier! + ".Launcher" as CFString, false) }
+        UNUserNotificationCenter.current().removeAllDeliveredNotifications()
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+        if let id = Bundle.main.bundleIdentifier { prefs.removePersistentDomain(forName: id) }
+        prefs.synchronize()
+        NSApp.terminate(nil)
+    }
+
+    /// First launch: automatic update checks contact GitHub (IP address is transmitted), so they are opt-in.
+    func askUpdateConsentIfNeeded() {
+        guard prefs.object(forKey: "updateChecks") == nil else { return }
+        let alert = NSAlert()
+        alert.messageText = t("update_consent_title")
+        alert.informativeText = t("update_consent_info")
+        alert.addButton(withTitle: t("no_thanks"))
+        alert.addButton(withTitle: t("allow"))
+        alert.window.title = "BLEUnlock"
+        NSApp.activate(ignoringOtherApps: true)
+        prefs.set(alert.runModal() == .alertSecondButtonReturn, forKey: "updateChecks")
+    }
+
     @objc func openReleases() {
         NSWorkspace.shared.open(releasesURL)
     }
@@ -887,6 +923,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         maxAttemptsMenu.delegate = self
         let wakeNoUnlock = add(securityMenu, t("wake_without_unlocking"), #selector(toggleWakeWithoutUnlocking), symbol: "moon.zzz", state: on("wakeWithoutUnlocking"))
         unlockOnlyItems += [setPw, rmPw, attemptsItem, wakeNoUnlock]
+        securityMenu.addItem(NSMenuItem.separator())
+        add(securityMenu, t("erase_data"), #selector(eraseAllData), symbol: "xmark.bin")
 
         // Options
         let optionsMenu = NSMenu()
@@ -901,6 +939,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         add(optionsMenu, t("notifications"), #selector(toggleNotifications), symbol: "bell", state: notifOn)
         let notifyUnlock = add(optionsMenu, t("notify_on_unlock"), #selector(toggleNotifyOnUnlock), symbol: "bell.badge", state: on("notifyOnUnlock"))
         unlockOnlyItems.append(notifyUnlock)
+        add(optionsMenu, t("automatic_updates"), #selector(toggleAutoUpdates), symbol: "arrow.triangle.2.circlepath", state: on("updateChecks"))
         add(optionsMenu, t("show_rssi_in_menubar"), #selector(toggleShowRSSI), symbol: "number", state: on("showRSSI"))
         add(optionsMenu, t("launch_at_login"), #selector(toggleLaunchAtLogin), symbol: "power.circle", state: on("launchAtLogin"))
 
@@ -910,6 +949,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         updateMenuItem = upd
         add(mainMenu, t("check_for_updates"), #selector(checkUpdateNow), symbol: "arrow.triangle.2.circlepath")
         add(mainMenu, t("about"), #selector(showAboutBox), symbol: "info.circle")
+        add(mainMenu, t("privacy_policy"), #selector(openPrivacy), symbol: "hand.raised")
         mainMenu.addItem(NSMenuItem.separator())
         add(mainMenu, t("quit"), #selector(NSApplication.terminate(_:)), symbol: "xmark.circle")
         statusItem.menu = mainMenu
@@ -935,6 +975,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         ble.delegate = self
         updateResultHandler = { [weak self] latest, manual, failed in self?.handleUpdateResult(latest: latest, manual: manual, failed: failed) }
         chooseModeIfNeeded()
+        askUpdateConsentIfNeeded()
         if let str = prefs.string(forKey: "device") {
             if let uuid = UUID(uuidString: str) {
                 monitorDevice(uuid: uuid)

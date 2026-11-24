@@ -19,4 +19,11 @@ check "workflows declare permissions" "for f in .github/workflows/*.yml; do grep
 check "event script ownership check present" "grep -q 'ownerAccountID' BLEUnlock/AppDelegate.swift || echo missing"
 check "console-session guard present" "grep -q 'isSessionOnConsole' BLEUnlock/AppDelegate.swift || echo missing"
 check "unlock attempt limiter present" "grep -q 'allowUnlockAttempt' BLEUnlock/AppDelegate.swift || echo missing"
+check "only github hosts are ever contacted (EU/GDPR: no other endpoints)" "grep -rnoE 'https?://[A-Za-z0-9.-]+' $SRC --include=*.swift --include=*.m --include=*.c | grep -vE 'https://(api\\.)?github\\.com' || true"
+check "no analytics/tracking SDK references" "grep -rniE 'firebase|crashlytics|sentry|mixpanel|amplitude|google-analytics|appcenter|bugsnag|segment' $SRC BLEUnlock.xcodeproj/project.pbxproj --include=* 2>/dev/null | head"
+check "automatic network access is opt-in" "grep -q 'forKey: \"updateChecks\"' BLEUnlock/checkUpdate.swift || echo missing"
+check "redirects refused for update check" "grep -q 'completionHandler(nil)' BLEUnlock/checkUpdate.swift || echo missing"
+check "erase-all-data feature present" "grep -q 'eraseAllData' BLEUnlock/AppDelegate.swift || echo missing"
+check "privacy manifest declares no tracking/collection" "grep -A1 'NSPrivacyTracking<' BLEUnlock/PrivacyInfo.xcprivacy | grep -q false || echo missing"
+check "no legacy upstream bundle id" "grep -rn 'jp\\.sone' BLEUnlock.xcodeproj BLEUnlock Launcher scripts | head"
 exit $fail

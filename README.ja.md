@@ -152,7 +152,7 @@ MACアドレスが正しく解決されているかチェックするには、*�
 BLEUnlockはロック・アンロック時に以下のスクリプトを実行します。
 
 ```
-~/Library/Application Scripts/jp.sone.BLEUnlock/event
+~/Library/Application Scripts/io.github.altissnono.BLEUnlock/event
 ```
 
 スクリプトにはイベントに応じて以下の引数の一つが渡されます。

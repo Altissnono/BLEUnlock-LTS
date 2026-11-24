@@ -69,3 +69,13 @@
 "update_available_info" = "Version %@ ist verfügbar (Sie haben %@).";
 "download" = "Laden";
 "later" = "Später";
+"automatic_updates" = "Automatische Update-Suche";
+"update_consent_title" = "Automatisch nach Updates suchen?";
+"update_consent_info" = "BLEUnlock kann einmal täglich GitHub (api.github.com) kontaktieren, um nach einer neuen Version zu suchen. Dabei ist Ihre IP-Adresse für GitHub sichtbar. Es wird sonst nichts gesendet. Jederzeit unter Optionen änderbar.";
+"allow" = "Erlauben";
+"no_thanks" = "Nein danke";
+"erase_data" = "Alle Daten löschen…";
+"erase_data_confirm" = "Alle BLEUnlock-Daten löschen?";
+"erase_data_info" = "Gespeichertes Passwort, alle Einstellungen und das Anmeldeobjekt werden gelöscht, dann wird BLEUnlock beendet.";
+"erase" = "Löschen";
+"privacy_policy" = "Datenschutzerklärung";

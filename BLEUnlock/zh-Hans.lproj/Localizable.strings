@@ -69,3 +69,13 @@
 "update_available_info" = "版本 %@ 已发布（当前为 %@）。";
 "download" = "下载";
 "later" = "稍后";
+"automatic_updates" = "自动检查更新";
+"update_consent_title" = "自动检查更新？";
+"update_consent_info" = "BLEUnlock 可每天联系一次 GitHub（api.github.com）以检查是否有新版本，此时 GitHub 可看到您的 IP 地址。不会发送其他任何信息。可随时在“选项”中更改。";
+"allow" = "允许";
+"no_thanks" = "不用了";
+"erase_data" = "清除所有数据…";
+"erase_data_confirm" = "清除 BLEUnlock 的所有数据？";
+"erase_data_info" = "这将删除已存储的密码、所有设置和登录项，然后退出 BLEUnlock。";
+"erase" = "清除";
+"privacy_policy" = "隐私政策";
