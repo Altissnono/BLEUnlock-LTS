@@ -34,6 +34,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     let confirmDelayMenu = NSMenu()
     let modeMenu = NSMenu()
     var unlockOnlyItems: [NSMenuItem] = []
+    var updateMenuItem: NSMenuItem?
     let UNLOCK_DEFAULT = -60
 
     /// "full" = lock and unlock (password stored in Keychain), "lockOnly" = never stores a password.
@@ -737,6 +738,38 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         checkUpdate(force: true)
     }
 
+    @objc func openReleases() {
+        NSWorkspace.shared.open(releasesURL)
+    }
+
+    /// Reliable feedback for update checks: a menu item for automatic checks and an alert for manual ones
+    /// (notifications alone can be silently disabled by the user or by macOS).
+    func handleUpdateResult(latest: String?, manual: Bool, failed: Bool) {
+        if let v = latest {
+            updateMenuItem?.title = String(format: t("update_menu"), v)
+            updateMenuItem?.isHidden = false
+        }
+        guard manual else { return }
+        let current = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+        let alert = NSAlert()
+        alert.window.title = "BLEUnlock"
+        if failed {
+            alert.messageText = t("update_check_failed")
+            alert.addButton(withTitle: t("ok"))
+        } else if let v = latest {
+            alert.messageText = t("notification_update_available")
+            alert.informativeText = String(format: t("update_available_info"), v, current)
+            alert.addButton(withTitle: t("download"))
+            alert.addButton(withTitle: t("later"))
+        } else {
+            alert.messageText = t("up_to_date")
+            alert.informativeText = current
+            alert.addButton(withTitle: t("ok"))
+        }
+        NSApp.activate(ignoringOtherApps: true)
+        if alert.runModal() == .alertFirstButtonReturn && latest != nil { openReleases() }
+    }
+
     @objc func lockNow() {
         guard !isScreenLocked() else { return }
         manualLock = true
@@ -872,6 +905,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         add(optionsMenu, t("launch_at_login"), #selector(toggleLaunchAtLogin), symbol: "power.circle", state: on("launchAtLogin"))
 
         mainMenu.addItem(NSMenuItem.separator())
+        let upd = add(mainMenu, "", #selector(openReleases), symbol: "arrow.down.circle.fill")
+        upd.isHidden = true
+        updateMenuItem = upd
         add(mainMenu, t("check_for_updates"), #selector(checkUpdateNow), symbol: "arrow.triangle.2.circlepath")
         add(mainMenu, t("about"), #selector(showAboutBox), symbol: "info.circle")
         mainMenu.addItem(NSMenuItem.separator())
@@ -897,6 +933,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
             constructMenu()
         }
         ble.delegate = self
+        updateResultHandler = { [weak self] latest, manual, failed in self?.handleUpdateResult(latest: latest, manual: manual, failed: failed) }
         chooseModeIfNeeded()
         if let str = prefs.string(forKey: "device") {
             if let uuid = UUID(uuidString: str) {

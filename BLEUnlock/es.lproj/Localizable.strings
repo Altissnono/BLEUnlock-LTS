@@ -65,3 +65,7 @@
 "notification_unlocked" = "Desbloqueado por BLEUnlock";
 "notification_unlock_paused" = "Desbloqueo automático en pausa";
 "notification_unlock_paused_info" = "Demasiados intentos fallidos. Desbloquea manualmente para reanudar.";
+"update_menu" = "⬆ Actualización disponible: %@";
+"update_available_info" = "La versión %@ está disponible (tienes la %@).";
+"download" = "Descargar";
+"later" = "Más tarde";

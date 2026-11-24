@@ -65,3 +65,7 @@
 "notification_unlocked" = "Unlocked by BLEUnlock";
 "notification_unlock_paused" = "Auto-unlock paused";
 "notification_unlock_paused_info" = "Too many failed attempts. Unlock manually to resume.";
+"update_menu" = "⬆ Update Available: %@";
+"update_available_info" = "Version %@ is available (you have %@).";
+"download" = "Download";
+"later" = "Later";

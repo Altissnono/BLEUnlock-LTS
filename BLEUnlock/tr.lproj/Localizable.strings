@@ -65,3 +65,7 @@
 "notification_unlocked" = "BLEUnlock tarafından açıldı";
 "notification_unlock_paused" = "Otomatik kilit açma duraklatıldı";
 "notification_unlock_paused_info" = "Çok fazla başarısız deneme. Devam etmek için kilidi elle açın.";
+"update_menu" = "⬆ Güncelleme Var: %@";
+"update_available_info" = "%@ sürümü mevcut (sizde %@ var).";
+"download" = "İndir";
+"later" = "Daha Sonra";

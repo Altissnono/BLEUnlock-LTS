@@ -65,3 +65,7 @@
 "notification_unlocked" = "已由 BLEUnlock 解锁";
 "notification_unlock_paused" = "自动解锁已暂停";
 "notification_unlock_paused_info" = "失败次数过多。请手动解锁以恢复。";
+"update_menu" = "⬆ 有可用更新：%@";
+"update_available_info" = "版本 %@ 已发布（当前为 %@）。";
+"download" = "下载";
+"later" = "稍后";

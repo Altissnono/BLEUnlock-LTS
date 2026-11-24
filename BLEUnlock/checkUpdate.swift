@@ -12,6 +12,9 @@ private let INTERVAL = 24.0 * 60 * 60
 private var notified = false
 private var lastCheckAt = UserDefaults.standard.double(forKey: KEY)
 
+/// Called on the main queue: (latestVersion if newer, isManualCheck, failed)
+var updateResultHandler: ((String?, Bool, Bool) -> Void)?
+
 func deliverNotification(id: String, subtitle: String, body: String, delay: TimeInterval = 1) {
     let content = UNMutableNotificationContent()
     content.title = "BLEUnlock"
@@ -40,7 +43,7 @@ private func doCheckUpdate(force: Bool) {
               let dict = (try? JSONSerialization.jsonObject(with: jsondata)) as? [String: Any],
               let version = dict["tag_name"] as? String,
               version.range(of: #"^v?\d+(\.\d+){0,3}(-[0-9A-Za-z.]+)?$"#, options: .regularExpression) != nil else {
-            if force { DispatchQueue.main.async { deliverNotification(id: updateNotificationId, subtitle: t("update_check_failed"), body: "") } }
+            DispatchQueue.main.async { updateResultHandler?(nil, force, true) }
             return
         }
         lastCheckAt = NSDate().timeIntervalSince1970
@@ -67,10 +70,13 @@ private func isNewer(_ latest: String, than current: String) -> Bool {
 private func compareVersionsAndNotify(_ latestVersion: String, force: Bool) {
     guard let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String else { return }
     if isNewer(latestVersion, than: version) {
-        deliverNotification(id: updateNotificationId, subtitle: t("notification_update_available"), body: latestVersion)
+        if !notified {
+            deliverNotification(id: updateNotificationId, subtitle: t("notification_update_available"), body: latestVersion)
+        }
         notified = true
-    } else if force {
-        deliverNotification(id: updateNotificationId, subtitle: t("up_to_date"), body: version)
+        updateResultHandler?(latestVersion, force, false)
+    } else {
+        updateResultHandler?(nil, force, false)
     }
 }
 

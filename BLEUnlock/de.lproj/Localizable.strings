@@ -65,3 +65,7 @@
 "notification_unlocked" = "Von BLEUnlock entsperrt";
 "notification_unlock_paused" = "Automatisches Entsperren pausiert";
 "notification_unlock_paused_info" = "Zu viele Fehlversuche. Entsperren Sie manuell, um fortzufahren.";
+"update_menu" = "⬆ Update verfügbar: %@";
+"update_available_info" = "Version %@ ist verfügbar (Sie haben %@).";
+"download" = "Laden";
+"later" = "Später";

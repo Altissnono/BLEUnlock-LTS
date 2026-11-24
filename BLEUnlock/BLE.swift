@@ -2,6 +2,13 @@ import Foundation
 import CoreBluetooth
 import Accelerate
 
+/// Strings coming from nearby BLE devices are untrusted: strip control characters and cap the length
+/// before they are shown in the menu (prevents menu spoofing / UI abuse).
+func sanitizeDeviceString(_ s: String, max: Int = 64) -> String {
+    let cleaned = s.unicodeScalars.filter { !CharacterSet.controlCharacters.contains($0) && $0 != "\u{202E}" && $0 != "\u{202D}" }
+    return String(String.UnicodeScalarView(cleaned)).prefix(max).trimmingCharacters(in: .whitespaces)
+}
+
 let DeviceInformation = CBUUID(string:"180A")
 let ManufacturerName = CBUUID(string:"2A29")
 let ModelName = CBUUID(string:"2A24")
@@ -69,8 +76,8 @@ class Device: NSObject {
                     return manu
                 }
             }
-            if let name = peripheral?.name {
-                if name.trimmingCharacters(in: .whitespaces).count != 0 {
+            if let name = peripheral?.name.map({ sanitizeDeviceString($0) }) {
+                if name.count != 0 {
                     return name
                 }
             }
@@ -427,8 +434,8 @@ class BLE: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
                     error: Error?)
     {
         if let value = characteristic.value {
-            let str: String? = String(data: value, encoding: .utf8)
-            if let s = str {
+            let str: String? = value.count <= 256 ? String(data: value, encoding: .utf8).map { sanitizeDeviceString($0) } : nil
+            if let s = str, !s.isEmpty {
                 if let device = devices[peripheral.identifier] {
                     if characteristic.uuid == ManufacturerName {
                         device.manufacture = s
@@ -438,7 +445,7 @@ class BLE: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
                         device.model = s
                         delegate?.updateDevice(device: device)
                     }
-                    if device.model != nil && device.model != nil && device.peripheral != monitoredPeripheral {
+                    if device.manufacture != nil && device.model != nil && device.peripheral != monitoredPeripheral {
                         centralMgr.cancelPeripheralConnection(peripheral)
                     }
                 }

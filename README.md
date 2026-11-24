@@ -230,6 +230,11 @@ Copyright © 2019-2022 Takeshi Sone. LTS modifications © 2026 Altissnono.
 
 ## What's new in LTS
 
+### 2.0.1
+- Update check reworked: the *Check for Updates* item now always answers with a dialog (update available / up to date / failed) and a *Download* button; an automatic check also adds an "Update Available" item to the menu. It no longer depends on notification permission.
+- `SECURITY_AUDIT.md` (full audit) and `scripts/security-check.sh` (static security regression checks run in CI).
+- SQLite lookups use bound parameters and a read-only database; text from nearby BLE devices is sanitised before display; fixed a manufacturer/model check bug.
+
 ### 2.0.0
 **New**
 - *Lock only* mode (no password stored, no Accessibility permission) alongside *Lock & Unlock*; chosen on first launch, switchable anytime from the **Mode** menu. Switching to lock-only deletes the stored password.

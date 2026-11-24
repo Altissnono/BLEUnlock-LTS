@@ -65,3 +65,7 @@
 "notification_unlocked" = "BLEUnlockによりロック解除";
 "notification_unlock_paused" = "自動ロック解除を一時停止";
 "notification_unlock_paused_info" = "失敗が多すぎます。手動で解除すると再開します。";
+"update_menu" = "⬆ アップデートあり: %@";
+"update_available_info" = "バージョン %@ が利用可能です（現在 %@）。";
+"download" = "ダウンロード";
+"later" = "後で";

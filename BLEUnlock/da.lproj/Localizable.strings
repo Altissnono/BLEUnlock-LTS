@@ -65,3 +65,7 @@
 "notification_unlocked" = "Låst op af BLEUnlock";
 "notification_unlock_paused" = "Automatisk oplåsning sat på pause";
 "notification_unlock_paused_info" = "For mange mislykkede forsøg. Lås op manuelt for at fortsætte.";
+"update_menu" = "⬆ Opdatering tilgængelig: %@";
+"update_available_info" = "Version %@ er tilgængelig (du har %@).";
+"download" = "Hent";
+"later" = "Senere";

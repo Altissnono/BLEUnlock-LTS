@@ -65,3 +65,7 @@
 "notification_unlocked" = "Déverrouillé par BLEUnlock";
 "notification_unlock_paused" = "Déverrouillage auto suspendu";
 "notification_unlock_paused_info" = "Trop d’échecs. Déverrouillez manuellement pour reprendre.";
+"update_menu" = "⬆ Mise à jour disponible : %@";
+"update_available_info" = "La version %@ est disponible (vous avez la %@).";
+"download" = "Télécharger";
+"later" = "Plus tard";
