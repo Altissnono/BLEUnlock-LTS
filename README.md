@@ -3,7 +3,8 @@
 ## BLEUnlock LTS — this app is not distributed on the Mac App Store. Download it here for free.
 
 ![CI](https://github.com/Altissnono/BLEUnlock-LTS/actions/workflows/test.yml/badge.svg)
-![Github All Releases](https://img.shields.io/github/downloads/Altissnono/BLEUnlock-LTS/total.svg)
+[![Latest release](https://img.shields.io/github/v/release/Altissnono/BLEUnlock-LTS?display_name=tag&cacheSeconds=300)](https://github.com/Altissnono/BLEUnlock-LTS/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/Altissnono/BLEUnlock-LTS/total?cacheSeconds=300)](https://github.com/Altissnono/BLEUnlock-LTS/releases)
 
 BLEUnlock LTS is a maintained fork of [ts1/BLEUnlock](https://github.com/ts1/BLEUnlock) (MIT) with modernized APIs, extra security hardening and more settings. See [What's new in LTS](#whats-new-in-lts).
 
