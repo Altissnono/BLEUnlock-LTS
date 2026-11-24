@@ -32,6 +32,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     var lastRSSI: Int? = nil
     var unlockAttempts: [TimeInterval] = []
     let confirmDelayMenu = NSMenu()
+    let modeMenu = NSMenu()
+    var unlockOnlyItems: [NSMenuItem] = []
+    let UNLOCK_DEFAULT = -60
+
+    /// "full" = lock and unlock (password stored in Keychain), "lockOnly" = never stores a password.
+    var unlockEnabled: Bool { return prefs.string(forKey: "mode") != "lockOnly" }
     let maxAttemptsMenu = NSMenu()
 
     func menuWillOpen(_ menu: NSMenu) {
@@ -61,6 +67,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
                     item.state = .off
                 }
             }
+        } else if menu == modeMenu {
+            for item in menu.items { item.state = (item.tag == (unlockEnabled ? 0 : 1)) ? .on : .off }
         } else if menu == confirmDelayMenu {
             for item in menu.items { item.state = item.tag == prefs.integer(forKey: "confirmDelay") ? .on : .off }
         } else if menu == maxAttemptsMenu {
@@ -289,6 +297,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         CGEvent(keyboardEventSource: src, virtualKey: 52, keyDown: false)?.post(tap: .cghidEventTap)
     }
 
+    /// False when another user's session is in front (fast user switching): never type a password then.
+    func isSessionOnConsole() -> Bool {
+        if let dict = CGSessionCopyCurrentDictionary() as? [String : Any],
+           let onConsole = dict["kCGSSessionOnConsoleKey"] as? Bool {
+            return onConsole
+        }
+        return true
+    }
+
     func isScreenLocked() -> Bool {
         if let dict = CGSessionCopyCurrentDictionary() as? [String : Any] {
             if let locked = dict["CGSSessionScreenIsLocked"] as? Int {
@@ -299,6 +316,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     }
     
     func tryUnlockScreen() {
+        guard unlockEnabled else { return }
         guard !manualLock else { return }
         guard ble.presence else { return }
         guard ble.unlockRSSI != ble.UNLOCK_DISABLED else { return }
@@ -317,7 +335,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
 
         let delay = max(0.5, Double(prefs.integer(forKey: "confirmDelay")))
         Timer.scheduledTimer(withTimeInterval: delay, repeats: false, block: { _ in
-            guard self.isScreenLocked() else { return }
+            guard self.unlockEnabled, self.isScreenLocked(), self.isSessionOnConsole() else { return }
             // Re-check presence after the confirmation delay: the device must still be near.
             guard self.ble.presence else { return }
             guard self.allowUnlockAttempt() else { return }
@@ -528,10 +546,84 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         let response = msg.runModal()
         
         if (response == .alertFirstButtonReturn) {
-            let val = txt.intValue
-            ble.thresholdRSSI = Int(val)
+            let val = max(-100, min(-1, Int(txt.intValue)))
+            ble.thresholdRSSI = val
             prefs.set(val, forKey: "thresholdRSSI")
         }
+    }
+
+    func deleteStoredPassword() {
+        let query: [String: Any] = [
+            String(kSecClass): kSecClassGenericPassword,
+            String(kSecAttrAccount): NSUserName(),
+            String(kSecAttrService): Bundle.main.bundleIdentifier ?? "BLEUnlock",
+        ]
+        SecItemDelete(query as CFDictionary)
+    }
+
+    func confirm(_ msg: String, info: String, button: String) -> Bool {
+        let alert = NSAlert()
+        alert.messageText = msg
+        alert.informativeText = info
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: button)
+        alert.addButton(withTitle: t("cancel"))
+        alert.window.title = "BLEUnlock"
+        NSApp.activate(ignoringOtherApps: true)
+        return alert.runModal() == .alertFirstButtonReturn
+    }
+
+    @objc func removePassword() {
+        guard fetchPassword() != nil else { errorModal(t("password_not_set")); return }
+        if confirm(t("remove_password_confirm"), info: t("remove_password_info"), button: t("remove")) {
+            deleteStoredPassword()
+        }
+    }
+
+    /// Applies the mode without persisting RSSI changes, so switching back restores the user's settings.
+    func applyMode() {
+        if unlockEnabled {
+            let saved = prefs.integer(forKey: "unlockRSSI")
+            ble.unlockRSSI = saved != 0 ? saved : UNLOCK_DEFAULT
+        } else {
+            ble.unlockRSSI = ble.UNLOCK_DISABLED
+        }
+        for item in unlockOnlyItems { item.isHidden = !unlockEnabled }
+    }
+
+    @objc func setMode(_ menuItem: NSMenuItem) {
+        let wantUnlock = menuItem.tag == 0
+        guard wantUnlock != unlockEnabled else { return }
+        if wantUnlock {
+            prefs.set("full", forKey: "mode")
+            applyMode()
+            checkAccessibility()
+            if !prefs.bool(forKey: "wakeWithoutUnlocking") && fetchPassword() == nil { askPassword() }
+        } else {
+            if fetchPassword() != nil {
+                guard confirm(t("lock_only_confirm"), info: t("lock_only_info"), button: t("switch")) else { return }
+                deleteStoredPassword()
+            }
+            prefs.set("lockOnly", forKey: "mode")
+            applyMode()
+        }
+    }
+
+    /// First launch: let the user choose; nothing is stored in Keychain in "lock only" mode.
+    func chooseModeIfNeeded() {
+        guard prefs.string(forKey: "mode") == nil else { return }
+        if fetchPassword() != nil || prefs.string(forKey: "device") != nil {
+            prefs.set("full", forKey: "mode")  // existing user: keep current behaviour
+            return
+        }
+        let alert = NSAlert()
+        alert.messageText = t("welcome_title")
+        alert.informativeText = t("welcome_info")
+        alert.addButton(withTitle: t("mode_full"))
+        alert.addButton(withTitle: t("mode_lock_only"))
+        alert.window.title = "BLEUnlock"
+        NSApp.activate(ignoringOtherApps: true)
+        prefs.set(alert.runModal() == .alertFirstButtonReturn ? "full" : "lockOnly", forKey: "mode")
     }
 
     @objc func toggleWakeOnProximity(_ menuItem: NSMenuItem) {
@@ -549,7 +641,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     @objc func setUnlockRSSI(_ menuItem: NSMenuItem) {
         let value = menuItem.tag
         prefs.set(value, forKey: "unlockRSSI")
-        ble.unlockRSSI = value
+        if unlockEnabled { ble.unlockRSSI = value }
     }
 
     @objc func setTimeout(_ menuItem: NSMenuItem) {
@@ -665,118 +757,125 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         menu.addItem(withTitle: t("farther"), action: nil, keyEquivalent: "")
         menu.delegate = self
     }
-    
-    func constructMenu() {
-        monitorMenuItem = mainMenu.addItem(withTitle: t("device_not_set"), action: nil, keyEquivalent: "")
-        
-        var item: NSMenuItem
 
-        item = mainMenu.addItem(withTitle: t("lock_now"), action: #selector(lockNow), keyEquivalent: "")
+    func symbol(_ item: NSMenuItem, _ name: String) {
+        if #available(macOS 11.0, *) {
+            item.image = NSImage(systemSymbolName: name, accessibilityDescription: nil)
+        }
+    }
+
+    @discardableResult
+    func add(_ menu: NSMenu, _ title: String, _ action: Selector?, symbol name: String? = nil, state: Bool? = nil, tag: Int = 0) -> NSMenuItem {
+        let item = menu.addItem(withTitle: title, action: action, keyEquivalent: "")
+        item.tag = tag
+        if let n = name { symbol(item, n) }
+        if let st = state { item.state = st ? .on : .off }
+        return item
+    }
+
+    func submenu(_ title: String, _ icon: String, _ menu: NSMenu) -> NSMenuItem {
+        let item = mainMenu.addItem(withTitle: title, action: nil, keyEquivalent: "")
+        item.submenu = menu
+        symbol(item, icon)
+        return item
+    }
+
+    func constructMenu() {
+        let on: (String) -> Bool = { self.prefs.bool(forKey: $0) }
+        let notifOn = prefs.object(forKey: "notifications") == nil || prefs.bool(forKey: "notifications")
+
+        monitorMenuItem = mainMenu.addItem(withTitle: t("device_not_set"), action: nil, keyEquivalent: "")
+        symbol(monitorMenuItem!, "antenna.radiowaves.left.and.right")
+        add(mainMenu, t("lock_now"), #selector(lockNow), symbol: "lock.fill")
         mainMenu.addItem(NSMenuItem.separator())
 
-        item = mainMenu.addItem(withTitle: t("device"), action: nil, keyEquivalent: "")
-        item.submenu = deviceMenu
+        // Device
+        _ = submenu(t("device"), "iphone", deviceMenu)
         deviceMenu.delegate = self
         deviceMenu.addItem(withTitle: t("scanning"), action: nil, keyEquivalent: "")
 
-        let unlockRSSIItem = mainMenu.addItem(withTitle: t("unlock_rssi"), action: nil, keyEquivalent: "")
-        unlockRSSIItem.submenu = unlockRSSIMenu
-        item = unlockRSSIMenu.addItem(withTitle: t("disabled"), action: #selector(setUnlockRSSI), keyEquivalent: "")
-        item.tag = ble.UNLOCK_DISABLED
-        constructRSSIMenu(unlockRSSIMenu, #selector(setUnlockRSSI))
+        // Mode
+        _ = submenu(t("mode"), "lock.shield", modeMenu)
+        add(modeMenu, t("mode_full"), #selector(setMode), tag: 0)
+        add(modeMenu, t("mode_lock_only"), #selector(setMode), tag: 1)
+        modeMenu.delegate = self
 
-        let lockRSSIItem = mainMenu.addItem(withTitle: t("lock_rssi"), action: nil, keyEquivalent: "")
+        mainMenu.addItem(NSMenuItem.separator())
+
+        // Proximity
+        let proximityMenu = NSMenu()
+        _ = submenu(t("proximity"), "dot.radiowaves.left.and.right", proximityMenu)
+
+        let unlockRSSIItem = add(proximityMenu, t("unlock_rssi"), nil, symbol: "lock.open")
+        unlockRSSIItem.submenu = unlockRSSIMenu
+        add(unlockRSSIMenu, t("disabled"), #selector(setUnlockRSSI), tag: ble.UNLOCK_DISABLED)
+        constructRSSIMenu(unlockRSSIMenu, #selector(setUnlockRSSI))
+        unlockOnlyItems.append(unlockRSSIItem)
+
+        let lockRSSIItem = add(proximityMenu, t("lock_rssi"), nil, symbol: "lock")
         lockRSSIItem.submenu = lockRSSIMenu
         constructRSSIMenu(lockRSSIMenu, #selector(setLockRSSI))
-        item = lockRSSIMenu.addItem(withTitle: t("disabled"), action: #selector(setLockRSSI), keyEquivalent: "")
-        item.tag = ble.LOCK_DISABLED
+        add(lockRSSIMenu, t("disabled"), #selector(setLockRSSI), tag: ble.LOCK_DISABLED)
 
-        let lockDelayItem = mainMenu.addItem(withTitle: t("lock_delay"), action: nil, keyEquivalent: "")
+        let lockDelayItem = add(proximityMenu, t("lock_delay"), nil, symbol: "timer")
         lockDelayItem.submenu = lockDelayMenu
-        lockDelayMenu.addItem(withTitle: "2 " + t("seconds"), action: #selector(setLockDelay), keyEquivalent: "").tag = 2
-        lockDelayMenu.addItem(withTitle: "5 " + t("seconds"), action: #selector(setLockDelay), keyEquivalent: "").tag = 5
-        lockDelayMenu.addItem(withTitle: "15 " + t("seconds"), action: #selector(setLockDelay), keyEquivalent: "").tag = 15
-        lockDelayMenu.addItem(withTitle: "30 " + t("seconds"), action: #selector(setLockDelay), keyEquivalent: "").tag = 30
-        lockDelayMenu.addItem(withTitle: "1 " + t("minute"), action: #selector(setLockDelay), keyEquivalent: "").tag = 60
-        lockDelayMenu.addItem(withTitle: "2 " + t("minutes"), action: #selector(setLockDelay), keyEquivalent: "").tag = 120
-        lockDelayMenu.addItem(withTitle: "5 " + t("minutes"), action: #selector(setLockDelay), keyEquivalent: "").tag = 300
+        for (n, unit, sec) in [(2, "seconds", 2), (5, "seconds", 5), (15, "seconds", 15), (30, "seconds", 30), (1, "minute", 60), (2, "minutes", 120), (5, "minutes", 300)] {
+            add(lockDelayMenu, "\(n) " + t(unit), #selector(setLockDelay), tag: sec)
+        }
         lockDelayMenu.delegate = self
 
-        let timeoutItem = mainMenu.addItem(withTitle: t("timeout"), action: nil, keyEquivalent: "")
+        let timeoutItem = add(proximityMenu, t("timeout"), nil, symbol: "wifi.slash")
         timeoutItem.submenu = timeoutMenu
-        timeoutMenu.addItem(withTitle: "30 " + t("seconds"), action: #selector(setTimeout), keyEquivalent: "").tag = 30
-        timeoutMenu.addItem(withTitle: "1 " + t("minute"), action: #selector(setTimeout), keyEquivalent: "").tag = 60
-        timeoutMenu.addItem(withTitle: "2 " + t("minutes"), action: #selector(setTimeout), keyEquivalent: "").tag = 120
-        timeoutMenu.addItem(withTitle: "5 " + t("minutes"), action: #selector(setTimeout), keyEquivalent: "").tag = 300
-        timeoutMenu.addItem(withTitle: "10 " + t("minutes"), action: #selector(setTimeout), keyEquivalent: "").tag = 600
+        for (n, unit, sec) in [(30, "seconds", 30), (1, "minute", 60), (2, "minutes", 120), (5, "minutes", 300), (10, "minutes", 600)] {
+            add(timeoutMenu, "\(n) " + t(unit), #selector(setTimeout), tag: sec)
+        }
         timeoutMenu.delegate = self
 
-        item = mainMenu.addItem(withTitle: t("wake_on_proximity"), action: #selector(toggleWakeOnProximity), keyEquivalent: "")
-        if prefs.bool(forKey: "wakeOnProximity") {
-            item.state = .on
-        }
-
-        item = mainMenu.addItem(withTitle: t("wake_without_unlocking"), action: #selector(toggleWakeWithoutUnlocking), keyEquivalent: "")
-        if prefs.bool(forKey: "wakeWithoutUnlocking") {
-            item.state = .on
-        }
-
-        item = mainMenu.addItem(withTitle: t("pause_now_playing"), action: #selector(togglePauseNowPlaying), keyEquivalent: "")
-        if prefs.bool(forKey: "pauseItunes") {
-            item.state = .on
-        }
-
-        item = mainMenu.addItem(withTitle: t("use_screensaver_to_lock"), action: #selector(toggleUseScreensaver), keyEquivalent: "")
-        if prefs.bool(forKey: "screensaver") {
-            item.state = .on
-        }
-
-        item = mainMenu.addItem(withTitle: t("sleep_display"), action: #selector(toggleSleepDisplay), keyEquivalent: "")
-        if prefs.bool(forKey: "sleepDisplay") {
-            item.state = .on
-        }
-        
-        mainMenu.addItem(withTitle: t("set_password"), action: #selector(askPassword), keyEquivalent: "")
-
-        item = mainMenu.addItem(withTitle: t("passive_mode"), action: #selector(togglePassiveMode), keyEquivalent: "")
-        item.state = prefs.bool(forKey: "passiveMode") ? .on : .off
-        
-        let confirmItem = mainMenu.addItem(withTitle: t("confirm_delay"), action: nil, keyEquivalent: "")
+        let confirmItem = add(proximityMenu, t("confirm_delay"), nil, symbol: "hourglass")
         confirmItem.submenu = confirmDelayMenu
-        confirmDelayMenu.addItem(withTitle: t("immediate"), action: #selector(setConfirmDelay), keyEquivalent: "").tag = 0
-        for sec in [2, 3, 5, 10] {
-            confirmDelayMenu.addItem(withTitle: "\(sec) " + t("seconds"), action: #selector(setConfirmDelay), keyEquivalent: "").tag = sec
-        }
+        add(confirmDelayMenu, t("immediate"), #selector(setConfirmDelay), tag: 0)
+        for sec in [2, 3, 5, 10] { add(confirmDelayMenu, "\(sec) " + t("seconds"), #selector(setConfirmDelay), tag: sec) }
         confirmDelayMenu.delegate = self
+        unlockOnlyItems.append(confirmItem)
 
-        let attemptsItem = mainMenu.addItem(withTitle: t("max_unlock_attempts"), action: nil, keyEquivalent: "")
+        proximityMenu.addItem(NSMenuItem.separator())
+        add(proximityMenu, t("set_rssi_threshold"), #selector(setRSSIThreshold), symbol: "slider.horizontal.3")
+
+        // Security
+        let securityMenu = NSMenu()
+        _ = submenu(t("security"), "lock.shield.fill", securityMenu)
+
+        let setPw = add(securityMenu, t("set_password"), #selector(askPassword), symbol: "key.fill")
+        let rmPw = add(securityMenu, t("remove_password"), #selector(removePassword), symbol: "trash")
+        let attemptsItem = add(securityMenu, t("max_unlock_attempts"), nil, symbol: "exclamationmark.shield")
         attemptsItem.submenu = maxAttemptsMenu
-        maxAttemptsMenu.addItem(withTitle: t("unlimited"), action: #selector(setMaxAttempts), keyEquivalent: "").tag = 0
-        for n in [1, 2, 3, 5] {
-            maxAttemptsMenu.addItem(withTitle: "\(n)", action: #selector(setMaxAttempts), keyEquivalent: "").tag = n
-        }
+        add(maxAttemptsMenu, t("unlimited"), #selector(setMaxAttempts), tag: 0)
+        for n in [1, 2, 3, 5] { add(maxAttemptsMenu, "\(n)", #selector(setMaxAttempts), tag: n) }
         maxAttemptsMenu.delegate = self
+        let wakeNoUnlock = add(securityMenu, t("wake_without_unlocking"), #selector(toggleWakeWithoutUnlocking), symbol: "moon.zzz", state: on("wakeWithoutUnlocking"))
+        unlockOnlyItems += [setPw, rmPw, attemptsItem, wakeNoUnlock]
 
-        item = mainMenu.addItem(withTitle: t("show_rssi_in_menubar"), action: #selector(toggleShowRSSI), keyEquivalent: "")
-        item.state = prefs.bool(forKey: "showRSSI") ? .on : .off
-
-        item = mainMenu.addItem(withTitle: t("notify_on_unlock"), action: #selector(toggleNotifyOnUnlock), keyEquivalent: "")
-        item.state = prefs.bool(forKey: "notifyOnUnlock") ? .on : .off
-
-        item = mainMenu.addItem(withTitle: t("notifications"), action: #selector(toggleNotifications), keyEquivalent: "")
-        item.state = (prefs.object(forKey: "notifications") == nil || prefs.bool(forKey: "notifications")) ? .on : .off
-
-        item = mainMenu.addItem(withTitle: t("launch_at_login"), action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
-        item.state = prefs.bool(forKey: "launchAtLogin") ? .on : .off
-        
-        mainMenu.addItem(withTitle: t("set_rssi_threshold"), action: #selector(setRSSIThreshold),
-                         keyEquivalent: "")
+        // Options
+        let optionsMenu = NSMenu()
+        _ = submenu(t("options"), "gearshape", optionsMenu)
+        let wakeProx = add(optionsMenu, t("wake_on_proximity"), #selector(toggleWakeOnProximity), symbol: "sun.max", state: on("wakeOnProximity"))
+        unlockOnlyItems.append(wakeProx)
+        add(optionsMenu, t("pause_now_playing"), #selector(togglePauseNowPlaying), symbol: "pause.circle", state: on("pauseItunes"))
+        add(optionsMenu, t("use_screensaver_to_lock"), #selector(toggleUseScreensaver), symbol: "display", state: on("screensaver"))
+        add(optionsMenu, t("sleep_display"), #selector(toggleSleepDisplay), symbol: "moon", state: on("sleepDisplay"))
+        add(optionsMenu, t("passive_mode"), #selector(togglePassiveMode), symbol: "eye.slash", state: on("passiveMode"))
+        optionsMenu.addItem(NSMenuItem.separator())
+        add(optionsMenu, t("notifications"), #selector(toggleNotifications), symbol: "bell", state: notifOn)
+        let notifyUnlock = add(optionsMenu, t("notify_on_unlock"), #selector(toggleNotifyOnUnlock), symbol: "bell.badge", state: on("notifyOnUnlock"))
+        unlockOnlyItems.append(notifyUnlock)
+        add(optionsMenu, t("show_rssi_in_menubar"), #selector(toggleShowRSSI), symbol: "number", state: on("showRSSI"))
+        add(optionsMenu, t("launch_at_login"), #selector(toggleLaunchAtLogin), symbol: "power.circle", state: on("launchAtLogin"))
 
         mainMenu.addItem(NSMenuItem.separator())
-        mainMenu.addItem(withTitle: t("check_for_updates"), action: #selector(checkUpdateNow), keyEquivalent: "")
-        mainMenu.addItem(withTitle: t("about"), action: #selector(showAboutBox), keyEquivalent: "")
+        add(mainMenu, t("check_for_updates"), #selector(checkUpdateNow), symbol: "arrow.triangle.2.circlepath")
+        add(mainMenu, t("about"), #selector(showAboutBox), symbol: "info.circle")
         mainMenu.addItem(NSMenuItem.separator())
-        mainMenu.addItem(withTitle: t("quit"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "")
+        add(mainMenu, t("quit"), #selector(NSApplication.terminate(_:)), symbol: "xmark.circle")
         statusItem.menu = mainMenu
     }
 
@@ -798,6 +897,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
             constructMenu()
         }
         ble.delegate = self
+        chooseModeIfNeeded()
         if let str = prefs.string(forKey: "device") {
             if let uuid = UUID(uuidString: str) {
                 monitorDevice(uuid: uuid)
@@ -811,18 +911,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         if unlockRSSI != 0 {
             ble.unlockRSSI = unlockRSSI
         }
+        applyMode()
         let timeout = prefs.integer(forKey: "timeout")
         if timeout != 0 {
-            ble.signalTimeout = Double(timeout)
+            ble.signalTimeout = Double(max(30, min(600, timeout)))
         }
         ble.setPassiveMode(prefs.bool(forKey: "passiveMode"))
         let thresholdRSSI = prefs.integer(forKey: "thresholdRSSI")
         if thresholdRSSI != 0 {
-            ble.thresholdRSSI = thresholdRSSI
+            ble.thresholdRSSI = max(-100, min(-1, thresholdRSSI))
         }
         let lockDelay = prefs.integer(forKey: "lockDelay")
         if lockDelay != 0 {
-            ble.proximityTimeout = Double(lockDelay)
+            ble.proximityTimeout = Double(max(2, min(300, lockDelay)))
         }
 
         UNUserNotificationCenter.current().delegate = self
@@ -839,10 +940,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         dnc.addObserver(self, selector: #selector(onScreensaverStart), name: NSNotification.Name(rawValue: "com.apple.screensaver.didstart"), object: nil)
         dnc.addObserver(self, selector: #selector(onScreensaverStop), name: NSNotification.Name(rawValue: "com.apple.screensaver.didstop"), object: nil)
 
-        if ble.unlockRSSI != ble.UNLOCK_DISABLED && !prefs.bool(forKey: "wakeWithoutUnlocking") && fetchPassword() == nil {
-            askPassword()
+        if unlockEnabled {
+            if !prefs.bool(forKey: "wakeWithoutUnlocking") && fetchPassword() == nil {
+                askPassword()
+            }
+            checkAccessibility()  // only needed to type the password: lock-only mode asks for no permission
         }
-        checkAccessibility()
         checkUpdate()
 
         // Hide dock icon.

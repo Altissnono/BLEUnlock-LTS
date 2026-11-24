@@ -79,6 +79,10 @@
 		B1EFF91622E010F50010DB0A /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		F749D28C277515C600C78C28 /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/AboutBox.strings; sourceTree = "<group>"; };
 		F749D28D277515C600C78C28 /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/Localizable.strings; sourceTree = "<group>"; };
+		A1B2C3D4E5F6000000000002 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/AboutBox.strings; sourceTree = "<group>"; };
+		A1B2C3D4E5F6000000000003 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
+		A1B2C3D4E5F6000000000004 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/AboutBox.strings; sourceTree = "<group>"; };
+		A1B2C3D4E5F6000000000005 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -212,7 +216,7 @@
 			attributes = {
 				LastSwiftUpdateCheck = 1020;
 				LastUpgradeCheck = 1200;
-				ORGANIZATIONNAME = "Takeshi Sone";
+				ORGANIZATIONNAME = "Altissnono";
 				TargetAttributes = {
 					3D600A3F22701A5A0068FB7B = {
 						CreatedOnToolsVersion = 10.2.1;
@@ -257,6 +261,8 @@
 				nb,
 				sv,
 				tr,
+				fr,
+				es,
 			);
 			mainGroup = 3DD4B647226C1C3200451B7B;
 			productRefGroup = 3DD4B651226C1C3200451B7B /* Products */;
@@ -349,6 +355,8 @@
 				3D43D0162765FD1600D15991 /* nb */,
 				3D43D0182765FD2800D15991 /* sv */,
 				F749D28D277515C600C78C28 /* tr */,
+				A1B2C3D4E5F6000000000003 /* fr */,
+				A1B2C3D4E5F6000000000005 /* es */,
 			);
 			name = Localizable.strings;
 			sourceTree = "<group>";
@@ -364,6 +372,8 @@
 				3D43D0152765FD1600D15991 /* nb */,
 				3D43D0172765FD2800D15991 /* sv */,
 				F749D28C277515C600C78C28 /* tr */,
+				A1B2C3D4E5F6000000000002 /* fr */,
+				A1B2C3D4E5F6000000000004 /* es */,
 			);
 			name = AboutBox.xib;
 			sourceTree = "<group>";
