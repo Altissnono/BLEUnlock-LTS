@@ -41,3 +41,12 @@
 "check_for_updates" = "Check for Updates";
 "up_to_date" = "BLEUnlock is up to date.";
 "update_check_failed" = "Update check failed.";
+"confirm_delay" = "Unlock Confirmation Delay";
+"immediate" = "Immediate";
+"max_unlock_attempts" = "Max Auto-Unlock Attempts";
+"unlimited" = "Unlimited";
+"show_rssi_in_menubar" = "Show Signal in Menu Bar";
+"notify_on_unlock" = "Notify on Unlock";
+"notification_unlocked" = "Unlocked by BLEUnlock";
+"notification_unlock_paused" = "Auto-unlock paused";
+"notification_unlock_paused_info" = "Too many failed attempts. Unlock manually to resume.";

@@ -30,6 +30,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     var unlockedAt = 0.0
     var inScreensaver = false
     var lastRSSI: Int? = nil
+    var unlockAttempts: [TimeInterval] = []
+    let confirmDelayMenu = NSMenu()
+    let maxAttemptsMenu = NSMenu()
 
     func menuWillOpen(_ menu: NSMenu) {
         if menu == deviceMenu {
@@ -58,6 +61,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
                     item.state = .off
                 }
             }
+        } else if menu == confirmDelayMenu {
+            for item in menu.items { item.state = item.tag == prefs.integer(forKey: "confirmDelay") ? .on : .off }
+        } else if menu == maxAttemptsMenu {
+            let cur = prefs.object(forKey: "maxUnlockAttempts") == nil ? 3 : prefs.integer(forKey: "maxUnlockAttempts")
+            for item in menu.items { item.state = item.tag == cur ? .on : .off }
         } else if menu == lockDelayMenu {
             for item in menu.items {
                 if item.tag == Int(ble.proximityTimeout) {
@@ -119,6 +127,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     func updateRSSI(rssi: Int?, active: Bool) {
         if let r = rssi {
             lastRSSI = r
+            statusItem.button?.title = prefs.bool(forKey: "showRSSI") ? " \(r)" : ""
             monitorMenuItem?.title = String(format:"%ddBm", r) + (active ? " (Active)" : "")
             if (!connected) {
                 connected = true
@@ -126,6 +135,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
             }
         } else {
             monitorMenuItem?.title = t("not_detected")
+            if prefs.bool(forKey: "showRSSI") { statusItem.button?.title = " –" }
             if (connected) {
                 connected = false
                 statusItem.button?.image = NSImage(named: "StatusBarDisconnected")
@@ -164,9 +174,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         completionHandler()
     }
 
+    /// Runs the optional user script only if it is a regular file owned by the current user
+    /// and not writable by group/others (prevents another account or process from swapping it).
     func runScript(_ arg: String) {
         guard let directory = try? FileManager.default.url(for: .applicationScriptsDirectory, in: .userDomainMask, appropriateFor: nil, create: true) else { return }
         let file = directory.appendingPathComponent("event")
+        guard let attrs = try? FileManager.default.attributesOfItem(atPath: file.path),
+              attrs[.type] as? FileAttributeType == .typeRegular,
+              (attrs[.ownerAccountID] as? NSNumber)?.uint32Value == getuid(),
+              let perms = attrs[.posixPermissions] as? NSNumber,
+              perms.intValue & 0o022 == 0 else {
+            if FileManager.default.fileExists(atPath: file.path) {
+                print("Refusing to run event script: must be a regular file owned by you and not group/world-writable")
+            }
+            return
+        }
         let process = Process()
         process.executableURL = file
         if let r = lastRSSI {
@@ -252,6 +274,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
             let pressEvent = CGEvent(keyboardEventSource: src, virtualKey: 49, keyDown: true)
             let len = offset + PER < uniCharCount ? PER : uniCharCount - offset
             let buffer = UnsafeMutablePointer<UniChar>.allocate(capacity: len)
+            defer { buffer.initialize(repeating: 0, count: len); buffer.deallocate() }
             for i in 0..<len {
                 buffer[i] = string.utf16[strIndex]
                 strIndex = string.utf16.index(after: strIndex)
@@ -292,16 +315,42 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
 
         guard !self.prefs.bool(forKey: "wakeWithoutUnlocking") else { return }
 
-        Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false, block: { _ in
+        let delay = max(0.5, Double(prefs.integer(forKey: "confirmDelay")))
+        Timer.scheduledTimer(withTimeInterval: delay, repeats: false, block: { _ in
             guard self.isScreenLocked() else { return }
+            // Re-check presence after the confirmation delay: the device must still be near.
+            guard self.ble.presence else { return }
+            guard self.allowUnlockAttempt() else { return }
             guard let password = self.fetchPassword(warn: true) else { return }
-            
+
             print("Entering password")
             self.unlockedAt = Date().timeIntervalSince1970
             self.fakeKeyStrokes(password)
             self.playNowPlaying()
             self.runScript("unlocked")
+            if self.prefs.bool(forKey: "notifyOnUnlock") {
+                deliverNotification(id: unlockNotificationId, subtitle: t("notification_unlocked"), body: "")
+            }
         })
+    }
+
+    /// Brute-force / lockout protection: if auto-unlock failed several times in a row
+    /// (e.g. the stored password is wrong), stop typing it until the user unlocks manually.
+    func allowUnlockAttempt() -> Bool {
+        let limit = prefs.object(forKey: "maxUnlockAttempts") == nil ? 3 : prefs.integer(forKey: "maxUnlockAttempts")
+        guard limit > 0 else { return true }
+        let now = Date().timeIntervalSince1970
+        unlockAttempts = unlockAttempts.filter { now - $0 < 120 }
+        if unlockAttempts.count >= limit {
+            print("Too many unlock attempts; auto-unlock paused until manual unlock")
+            if unlockAttempts.count == limit {
+                unlockAttempts.append(now)
+                deliverNotification(id: lockNotificationId, subtitle: t("notification_unlock_paused"), body: t("notification_unlock_paused_info"))
+            }
+            return false
+        }
+        unlockAttempts.append(now)
+        return true
     }
 
     @objc func onDisplayWake() {
@@ -338,6 +387,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     }
 
     @objc func onUnlock() {
+        unlockAttempts.removeAll()
         Timer.scheduledTimer(withTimeInterval: 2, repeats: false, block: { _ in
             print("onUnlock")
             if Date().timeIntervalSince1970 >= self.unlockedAt + 10 {
@@ -400,6 +450,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
             String(kSecAttrService): Bundle.main.bundleIdentifier ?? "BLEUnlock",
             String(kSecAttrLabel): "BLEUnlock",
             String(kSecValueData): pw,
+            String(kSecAttrAccessible): kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
         ]
         SecItemDelete(query as CFDictionary)
         let status = SecItemAdd(query as CFDictionary, nil)
@@ -437,7 +488,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
             errorModal("Failed to convert password")
             return nil
         }
-        return String(data: data, encoding: .utf8)!
+        return String(data: data, encoding: .utf8)
     }
     
     @objc func askPassword() {
@@ -456,6 +507,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         
         if (response == .alertFirstButtonReturn) {
             let pw = txt.stringValue
+            guard !pw.isEmpty else { return }
             storePassword(pw)
         }
     }
@@ -560,6 +612,27 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         let wakeWithoutUnlocking = !prefs.bool(forKey: "wakeWithoutUnlocking")
         prefs.set(wakeWithoutUnlocking, forKey: "wakeWithoutUnlocking")
         menuItem.state = wakeWithoutUnlocking ? .on : .off
+    }
+
+    @objc func setConfirmDelay(_ menuItem: NSMenuItem) {
+        prefs.set(menuItem.tag, forKey: "confirmDelay")
+    }
+
+    @objc func setMaxAttempts(_ menuItem: NSMenuItem) {
+        prefs.set(menuItem.tag, forKey: "maxUnlockAttempts")
+    }
+
+    @objc func toggleShowRSSI(_ menuItem: NSMenuItem) {
+        let value = !prefs.bool(forKey: "showRSSI")
+        prefs.set(value, forKey: "showRSSI")
+        menuItem.state = value ? .on : .off
+        if !value { statusItem.button?.title = "" }
+    }
+
+    @objc func toggleNotifyOnUnlock(_ menuItem: NSMenuItem) {
+        let value = !prefs.bool(forKey: "notifyOnUnlock")
+        prefs.set(value, forKey: "notifyOnUnlock")
+        menuItem.state = value ? .on : .off
     }
 
     @objc func toggleNotifications(_ menuItem: NSMenuItem) {
@@ -668,6 +741,28 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         item = mainMenu.addItem(withTitle: t("passive_mode"), action: #selector(togglePassiveMode), keyEquivalent: "")
         item.state = prefs.bool(forKey: "passiveMode") ? .on : .off
         
+        let confirmItem = mainMenu.addItem(withTitle: t("confirm_delay"), action: nil, keyEquivalent: "")
+        confirmItem.submenu = confirmDelayMenu
+        confirmDelayMenu.addItem(withTitle: t("immediate"), action: #selector(setConfirmDelay), keyEquivalent: "").tag = 0
+        for sec in [2, 3, 5, 10] {
+            confirmDelayMenu.addItem(withTitle: "\(sec) " + t("seconds"), action: #selector(setConfirmDelay), keyEquivalent: "").tag = sec
+        }
+        confirmDelayMenu.delegate = self
+
+        let attemptsItem = mainMenu.addItem(withTitle: t("max_unlock_attempts"), action: nil, keyEquivalent: "")
+        attemptsItem.submenu = maxAttemptsMenu
+        maxAttemptsMenu.addItem(withTitle: t("unlimited"), action: #selector(setMaxAttempts), keyEquivalent: "").tag = 0
+        for n in [1, 2, 3, 5] {
+            maxAttemptsMenu.addItem(withTitle: "\(n)", action: #selector(setMaxAttempts), keyEquivalent: "").tag = n
+        }
+        maxAttemptsMenu.delegate = self
+
+        item = mainMenu.addItem(withTitle: t("show_rssi_in_menubar"), action: #selector(toggleShowRSSI), keyEquivalent: "")
+        item.state = prefs.bool(forKey: "showRSSI") ? .on : .off
+
+        item = mainMenu.addItem(withTitle: t("notify_on_unlock"), action: #selector(toggleNotifyOnUnlock), keyEquivalent: "")
+        item.state = prefs.bool(forKey: "notifyOnUnlock") ? .on : .off
+
         item = mainMenu.addItem(withTitle: t("notifications"), action: #selector(toggleNotifications), keyEquivalent: "")
         item.state = (prefs.object(forKey: "notifications") == nil || prefs.bool(forKey: "notifications")) ? .on : .off
 

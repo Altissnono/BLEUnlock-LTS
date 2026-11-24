@@ -230,3 +230,20 @@ They are originally designed by Google LLC and licensed under Apache License ver
 MIT
 
 Copyright © 2019-2022 Takeshi Sone.
+
+## LTS fork changes
+
+Maintained fork of [ts1/BLEUnlock](https://github.com/ts1/BLEUnlock) (requires macOS 12+).
+
+**1.14.0 – security**
+- Auto-unlock lockout: stops typing the password after N failed attempts (default 3 in 2 min) until you unlock manually.
+- Unlock confirmation delay: the device must still be near after 0–10 s before the password is typed.
+- The optional `event` script only runs if owned by you and not group/world-writable.
+- Password buffer is wiped and freed after typing; Keychain item is `ThisDeviceOnly`; no force-unwraps on password handling.
+- Removed the unused Apple Events entitlement; update check validates the release tag.
+
+**1.14.0 – customization**
+- Show signal strength in the menu bar, notification toggles (lock / unlock), "Check for Updates" item.
+
+**1.13.0 – maintenance**
+- `UserNotifications`, `SMAppService`, no deprecated APIs; update checker points to this fork.
