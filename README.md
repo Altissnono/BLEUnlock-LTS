@@ -227,6 +227,8 @@ Copyright © 2019-2022 Takeshi Sone. LTS modifications © 2026 Altissnono.
 
 ## What's new in LTS
 
+**1.14.1** – About box shows LTS name and credits.
+
 **1.14.0 – security**
 - Auto-unlock lockout: stops typing the password after N failed attempts (default 3 in 2 min) until you unlock manually.
 - Unlock confirmation delay: the device must still be near after 0–10 s before the password is typed.
