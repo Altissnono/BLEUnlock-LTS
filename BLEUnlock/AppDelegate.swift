@@ -1,13 +1,14 @@
 import Cocoa
 import Quartz
 import ServiceManagement
+import UserNotifications
 
 func t(_ key: String) -> String {
     return NSLocalizedString(key, comment: "")
 }
 
 @NSApplicationMain
-class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemValidation, NSUserNotificationCenterDelegate, BLEDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemValidation, UNUserNotificationCenterDelegate, BLEDelegate {
     let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     let ble = BLE()
     let mainMenu = NSMenu()
@@ -22,7 +23,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     var displaySleep = false
     var systemSleep = false
     var connected = false
-    var userNotification: NSUserNotification?
     var nowPlayingWasPlaying = false
     var aboutBox: AboutBox? = nil
     var wakeTimer: Timer?
@@ -138,30 +138,30 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     }
 
     func notifyUser(_ reason: String) {
-        let un = NSUserNotification()
-        un.title = "BLEUnlock"
+        guard prefs.object(forKey: "notifications") == nil || prefs.bool(forKey: "notifications") else { return }
+        var subtitle = ""
         if reason == "lost" {
-            un.subtitle = t("notification_lost_signal")
+            subtitle = t("notification_lost_signal")
         } else if reason == "away" {
-            un.subtitle = t("notification_device_away")
+            subtitle = t("notification_device_away")
         }
-        un.informativeText = t("notification_locked")
-        un.deliveryDate = Date().addingTimeInterval(1)
-        NSUserNotificationCenter.default.scheduleNotification(un)
-        userNotification = un
+        deliverNotification(id: lockNotificationId, subtitle: subtitle, body: t("notification_locked"), delay: 1)
     }
 
-    func userNotificationCenter(_ center: NSUserNotificationCenter,
-                                shouldPresent notification: NSUserNotification) -> Bool {
-        return true
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .sound])
     }
 
-    func userNotificationCenter(_ center: NSUserNotificationCenter,
-                                didActivate notification: NSUserNotification) {
-        if notification != userNotification {
-            NSWorkspace.shared.open(URL(string: "https://github.com/ts1/BLEUnlock/releases")!)
-            NSUserNotificationCenter.default.removeDeliveredNotification(notification)
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                didReceive response: UNNotificationResponse,
+                                withCompletionHandler completionHandler: @escaping () -> Void) {
+        if response.notification.request.identifier == updateNotificationId {
+            NSWorkspace.shared.open(releasesURL)
+            center.removeDeliveredNotifications(withIdentifiers: [updateNotificationId])
         }
+        completionHandler()
     }
 
     func runScript(_ arg: String) {
@@ -204,7 +204,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
 
     func lockOrSaveScreen() {
         if prefs.bool(forKey: "screensaver") {
-            NSWorkspace.shared.launchApplication("ScreenSaverEngine")
+            let url = URL(fileURLWithPath: "/System/Library/CoreServices/ScreenSaverEngine.app")
+            NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration(), completionHandler: nil)
         } else {
             if SACLockScreenImmediate() != 0 {
                 print("Failed to lock screen")
@@ -219,10 +220,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     func updatePresence(presence: Bool, reason: String) {
         if presence {
             if ble.unlockRSSI != ble.UNLOCK_DISABLED {
-                if let un = userNotification {
-                    NSUserNotificationCenter.default.removeDeliveredNotification(un)
-                    userNotification = nil
-                }
+                UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [lockNotificationId])
                 if displaySleep && !systemSleep && prefs.bool(forKey: "wakeOnProximity") {
                     print("Waking display")
                     wakeDisplay()
@@ -518,7 +516,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         let launchAtLogin = !prefs.bool(forKey: "launchAtLogin")
         prefs.set(launchAtLogin, forKey: "launchAtLogin")
         menuItem.state = launchAtLogin ? .on : .off
-        SMLoginItemSetEnabled(Bundle.main.bundleIdentifier! + ".Launcher" as CFString, launchAtLogin)
+        if #available(macOS 13.0, *) {
+            do {
+                if launchAtLogin {
+                    try SMAppService.mainApp.register()
+                } else {
+                    try SMAppService.mainApp.unregister()
+                }
+            } catch {
+                errorModal("Failed to change login item", info: error.localizedDescription)
+            }
+        } else {
+            SMLoginItemSetEnabled(Bundle.main.bundleIdentifier! + ".Launcher" as CFString, launchAtLogin)
+        }
     }
 
     @objc func togglePauseNowPlaying(_ menuItem: NSMenuItem) {
@@ -550,6 +560,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         let wakeWithoutUnlocking = !prefs.bool(forKey: "wakeWithoutUnlocking")
         prefs.set(wakeWithoutUnlocking, forKey: "wakeWithoutUnlocking")
         menuItem.state = wakeWithoutUnlocking ? .on : .off
+    }
+
+    @objc func toggleNotifications(_ menuItem: NSMenuItem) {
+        let value = !(prefs.object(forKey: "notifications") == nil || prefs.bool(forKey: "notifications"))
+        prefs.set(value, forKey: "notifications")
+        menuItem.state = value ? .on : .off
+    }
+
+    @objc func checkUpdateNow() {
+        checkUpdate(force: true)
     }
 
     @objc func lockNow() {
@@ -648,6 +668,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         item = mainMenu.addItem(withTitle: t("passive_mode"), action: #selector(togglePassiveMode), keyEquivalent: "")
         item.state = prefs.bool(forKey: "passiveMode") ? .on : .off
         
+        item = mainMenu.addItem(withTitle: t("notifications"), action: #selector(toggleNotifications), keyEquivalent: "")
+        item.state = (prefs.object(forKey: "notifications") == nil || prefs.bool(forKey: "notifications")) ? .on : .off
+
         item = mainMenu.addItem(withTitle: t("launch_at_login"), action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
         item.state = prefs.bool(forKey: "launchAtLogin") ? .on : .off
         
@@ -655,6 +678,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
                          keyEquivalent: "")
 
         mainMenu.addItem(NSMenuItem.separator())
+        mainMenu.addItem(withTitle: t("check_for_updates"), action: #selector(checkUpdateNow), keyEquivalent: "")
         mainMenu.addItem(withTitle: t("about"), action: #selector(showAboutBox), keyEquivalent: "")
         mainMenu.addItem(NSMenuItem.separator())
         mainMenu.addItem(withTitle: t("quit"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "")
@@ -706,7 +730,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
             ble.proximityTimeout = Double(lockDelay)
         }
 
-        NSUserNotificationCenter.default.delegate = self
+        UNUserNotificationCenter.current().delegate = self
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
 
         let nc = NSWorkspace.shared.notificationCenter;
         nc.addObserver(self, selector: #selector(onDisplaySleep), name: NSWorkspace.screensDidSleepNotification, object: nil)

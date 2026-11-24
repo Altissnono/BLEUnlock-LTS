@@ -19,8 +19,11 @@
     [components removeLastObject];
     [components removeLastObject];
     NSString *mainPath = [NSString pathWithComponents:components];
-    [[NSWorkspace sharedWorkspace] launchApplication:mainPath];
-    [NSApp terminate:self];
+    [[NSWorkspace sharedWorkspace] openApplicationAtURL:[NSURL fileURLWithPath:mainPath]
+                                          configuration:[NSWorkspaceOpenConfiguration configuration]
+                                      completionHandler:^(NSRunningApplication *app, NSError *error) {
+                                          [NSApp terminate:self];
+                                      }];
 }
 
 - (void)applicationWillTerminate:(NSNotification *)aNotification {
