@@ -2,7 +2,9 @@ name: Release
 
 on:
   push:
+    branches: [master]
     tags: ['v*']
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -13,25 +15,37 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check tag matches app version
+      - name: Decide version
+        id: ver
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           v=$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' BLEUnlock/Info.plist)
-          [ "v$v" = "${GITHUB_REF_NAME}" ] || { echo "Tag ${GITHUB_REF_NAME} != Info.plist v$v"; exit 1; }
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          if gh release view "v$v" >/dev/null 2>&1; then
+            echo "Release v$v already exists - bump CFBundleShortVersionString in BLEUnlock/Info.plist to publish a new one."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build (ad-hoc signed)
+        if: steps.ver.outputs.publish == 'true'
         run: |
           xcodebuild -project BLEUnlock.xcodeproj -scheme BLEUnlock -configuration Release \
             CONFIGURATION_BUILD_DIR="$PWD/build" \
             CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= CODE_SIGN_STYLE=Manual build
 
       - name: Package
+        if: steps.ver.outputs.publish == 'true'
         run: |
-          ditto -c -k --keepParent build/BLEUnlock.app "BLEUnlock-${GITHUB_REF_NAME#v}.zip"
-          shasum -a 256 "BLEUnlock-${GITHUB_REF_NAME#v}.zip" > SHA256SUMS.txt
+          ditto -c -k --keepParent build/BLEUnlock.app "BLEUnlock-${{ steps.ver.outputs.version }}.zip"
+          shasum -a 256 "BLEUnlock-${{ steps.ver.outputs.version }}.zip" > SHA256SUMS.txt
 
       - name: Publish release
+        if: steps.ver.outputs.publish == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" "BLEUnlock-${GITHUB_REF_NAME#v}.zip" SHA256SUMS.txt \
-            --title "BLEUnlock LTS ${GITHUB_REF_NAME#v}" --generate-notes
+          gh release create "v${{ steps.ver.outputs.version }}" --target "$GITHUB_SHA" "BLEUnlock-${{ steps.ver.outputs.version }}.zip" SHA256SUMS.txt \
+            --title "BLEUnlock LTS ${{ steps.ver.outputs.version }}" --generate-notes
