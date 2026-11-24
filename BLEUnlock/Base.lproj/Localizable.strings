@@ -36,3 +36,8 @@
 "use_screensaver_to_lock" = "Use Screensaver to Lock";
 "wake_on_proximity" = "Wake on Proximity";
 "wake_without_unlocking" = "Wake without Unlocking";
+
+"notifications" = "Notifications";
+"check_for_updates" = "Check for Updates";
+"up_to_date" = "BLEUnlock is up to date.";
+"update_check_failed" = "Update check failed.";
