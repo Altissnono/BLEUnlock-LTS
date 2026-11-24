@@ -79,3 +79,4 @@
 "erase_data_info" = "Se eliminarán la contraseña guardada, todos los ajustes y el elemento de inicio de sesión, y BLEUnlock se cerrará.";
 "erase" = "Borrar";
 "privacy_policy" = "Política de privacidad";
+"verify_front_window" = "Verificar la pantalla de bloqueo antes de escribir";

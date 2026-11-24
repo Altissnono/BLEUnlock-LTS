@@ -79,3 +79,4 @@
 "erase_data_info" = "保存したパスワード、すべての設定、ログイン項目を削除し、BLEUnlockを終了します。";
 "erase" = "消去";
 "privacy_policy" = "プライバシーポリシー";
+"verify_front_window" = "入力前にロック画面を確認";

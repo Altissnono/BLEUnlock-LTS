@@ -79,3 +79,4 @@
 "erase_data_info" = "这将删除已存储的密码、所有设置和登录项，然后退出 BLEUnlock。";
 "erase" = "清除";
 "privacy_policy" = "隐私政策";
+"verify_front_window" = "输入前验证锁屏界面";

@@ -79,3 +79,4 @@
 "erase_data_info" = "Gespeichertes Passwort, alle Einstellungen und das Anmeldeobjekt werden gelöscht, dann wird BLEUnlock beendet.";
 "erase" = "Löschen";
 "privacy_policy" = "Datenschutzerklärung";
+"verify_front_window" = "Sperrbildschirm vor der Eingabe prüfen";

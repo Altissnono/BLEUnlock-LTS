@@ -6,7 +6,9 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: write        # create the release
+  id-token: write        # sign the provenance attestation (Sigstore)
+  attestations: write    # store the attestation
 
 concurrency:
   group: release
@@ -18,7 +20,7 @@ jobs:
     env:
       HAVE_CERT: ${{ secrets.DEVELOPER_ID_P12 != '' && secrets.APPLE_APP_PASSWORD != '' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Decide version
         id: ver
@@ -85,10 +87,24 @@ jobs:
           ditto -c -k --keepParent build/BLEUnlock.app "BLEUnlock-${{ steps.ver.outputs.version }}.zip"
           shasum -a 256 "BLEUnlock-${{ steps.ver.outputs.version }}.zip" > SHA256SUMS.txt
 
+      - name: Attest build provenance
+        if: steps.ver.outputs.publish == 'true'
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
+        with:
+          subject-path: BLEUnlock-${{ steps.ver.outputs.version }}.zip
+
       - name: Publish release
         if: steps.ver.outputs.publish == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.ver.outputs.version }}
         run: |
-          gh release create "v${{ steps.ver.outputs.version }}" --target "$GITHUB_SHA" "BLEUnlock-${{ steps.ver.outputs.version }}.zip" SHA256SUMS.txt \
-            --title "BLEUnlock LTS ${{ steps.ver.outputs.version }}" --generate-notes
+          set -euxo pipefail
+          for attempt in 1 2 3; do
+            if gh release create "v$VERSION" --target "$GITHUB_SHA" "BLEUnlock-$VERSION.zip" SHA256SUMS.txt \
+                 --title "BLEUnlock LTS $VERSION" --generate-notes; then exit 0; fi
+            # another run may have published the same version meanwhile: that is fine
+            if gh release view "v$VERSION" >/dev/null 2>&1; then echo "Release already exists"; exit 0; fi
+            sleep $((attempt * 15))
+          done
+          exit 1

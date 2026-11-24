@@ -27,7 +27,7 @@ Fixed during this audit (2.0.1): SQL built by string interpolation in `LEDeviceI
 
 # Test Coverage Score
 
-**1 / 10.** There is no test target. Only static regression checks (11 assertions, `scripts/security-check.sh`) and a CI build exist. Core logic (unlock state machine, RSSI averaging, attempt limiter, version comparison, string sanitiser) is untested.
+**1 / 10 at the time of the original audit (now ≈ 4/10, see the 3.1.0 addendum).** There was no test target. Only static regression checks (11 assertions, `scripts/security-check.sh`) and a CI build exist. Core logic (unlock state machine, RSSI averaging, attempt limiter, version comparison, string sanitiser) is untested.
 
 ---
 
@@ -219,3 +219,18 @@ For a local proximity‑unlock utility the implementation is **careful and small
 - **Identity:** bundle id changed from the upstream `jp.sone.*` to `io.github.altissnono.*` (side effect: a one‑time reset of settings/Keychain/TCC for existing installs).
 - **V‑03 (notarisation):** tooling now exists (`scripts/notarize-release.sh`, conditional CI steps). **Still open until the owner creates the Developer ID Application certificate and, for CI, the five repository secrets** — no certificate of that type is present on this Mac, so notarisation was **not performed or tested**.
 - **New residual risks:** "Erase All Data" quits the app (intended); same‑user processes can still alter `updateChecks`/consent (V‑09 class). GDPR compliance as a legal status is **not asserted**: no DPIA/lawyer review was done.
+
+---
+
+# Addendum — 3.1.0 tests, provenance, window verification
+
+**Tests (real, `swift test`, 33 tests, run in CI).** The pure security logic was extracted to `BLEUnlock/Core/` (compiled into the app *and* into a SwiftPM test target): unlock policy (`UnlockPolicy`), attempt limiter, front-window policy, prefs clamping, RSSI averaging, BLE string sanitiser, release-tag validation / version comparison, event-script guard, Keychain store, plus a localisation-completeness test (every language defines every key).
+- **Mutation check actually performed:** I temporarily removed (a) the console-session guard, (b) the group-write check of the script guard, (c) the limiter threshold. Each mutation made at least one test fail (`testEveryGuardBlocks – session not on console`, `testRejectsGroupWritable`, `testAllowsUpToLimitThenDeniesOnceNotified`); sources were restored and the suite is green again. Other guards are covered by `testEveryGuardBlocks` by construction (one violated condition at a time) but were not each mutated individually.
+- **Still untested:** the glue in `AppDelegate` (menus, timers, CGEvent posting, real lock screen), CoreBluetooth behaviour, notification delivery, the real HTTPS update call. Keychain tests skip themselves if the environment has no usable Keychain.
+- **Test Coverage Score: 1/10 → ~4/10** (core decision logic covered; UI/OS integration not).
+
+**Front-window verification (V‑04 hardening).** Immediately before typing, the front-most large on-screen window must belong to `loginwindow`/`ScreenSaverEngine`/`SecurityAgent`/`UserNotificationCenter`/`Window Server`; otherwise the password is not typed (setting *Security → Verify Lock Screen Before Typing*, default on). Only window metadata (owner name, size) is read — no Screen Recording permission. **Limits (honest):** the decision function is unit-tested, but the CoreGraphics query was **not** exercised on a real lock screen on every macOS version; if no qualifying window is found the check fails open (other guards still apply). If auto-unlock stops working after updating, turn this option off and report the macOS version.
+
+**Supply chain (V‑10 closed).** All GitHub Actions are pinned to full commit SHAs (checked by `scripts/security-check.sh`). Releases now carry a signed **build-provenance attestation** (Sigstore, `actions/attest-build-provenance`); verify with `gh attestation verify BLEUnlock-<version>.zip --repo Altissnono/BLEUnlock-LTS`. *Not yet observed working end-to-end on GitHub at the time of writing.*
+
+**Repository governance (open, needs the owner in GitHub settings).** Pushing to the repository is limited to the owner and invited collaborators; outside contributors can only open pull requests from forks. To *enforce* this, enable a branch ruleset on `master`: require pull request + status check `build`, block force pushes and deletions, require code-owner review (`.github/CODEOWNERS` is in place), and in Settings → Actions → General require approval for all outside collaborators.

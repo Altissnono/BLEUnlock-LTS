@@ -79,3 +79,4 @@
 "erase_data_info" = "This deletes the stored password, all settings and the login item, then quits BLEUnlock.";
 "erase" = "Erase";
 "privacy_policy" = "Privacy Policy";
+"verify_front_window" = "Verify Lock Screen Before Typing";

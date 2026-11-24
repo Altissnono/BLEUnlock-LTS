@@ -256,6 +256,11 @@ Copyright © 2019-2022 Takeshi Sone. LTS modifications © 2026 Altissnono.
 
 ## What's new in LTS
 
+### 3.1.0
+- **Tests:** 33 unit tests for the security-critical logic (`swift test`, run in CI) + extended static checks.
+- **Window check before typing:** the password is typed only if the lock screen is really in front (option *Security → Verify Lock Screen Before Typing*, on by default).
+- **Release provenance:** releases carry a Sigstore build-provenance attestation — `gh attestation verify BLEUnlock-<version>.zip --repo Altissnono/BLEUnlock-LTS`. GitHub Actions pinned by commit SHA; `CODEOWNERS`.
+
 ### 3.0.0 — 🇪🇺 privacy release
 - **Breaking:** new bundle identifier `io.github.altissnono.BLEUnlock` (replaces the upstream `jp.sone.*`). Settings, Keychain password, login item and the `event` script folder (`~/Library/Application Scripts/io.github.altissnono.BLEUnlock/`) start fresh — re‑select your device and re‑enter the password once.
 - Update checks are now **opt‑in** (consent prompt), hardened (ephemeral session, no redirects, size/host checks), plus *Automatic Update Checks* toggle.

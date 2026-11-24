@@ -79,3 +79,4 @@
 "erase_data_info" = "Cela supprime le mot de passe stocké, tous les réglages et l’élément d’ouverture de session, puis quitte BLEUnlock.";
 "erase" = "Effacer";
 "privacy_policy" = "Politique de confidentialité";
+"verify_front_window" = "Vérifier l’écran de verrouillage avant de saisir";

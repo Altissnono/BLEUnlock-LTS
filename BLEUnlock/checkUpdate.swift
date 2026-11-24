@@ -66,7 +66,7 @@ private func doCheckUpdate(force: Bool) {
               let jsondata = data, jsondata.count < 1_000_000,
               let dict = (try? JSONSerialization.jsonObject(with: jsondata)) as? [String: Any],
               let version = dict["tag_name"] as? String,
-              version.range(of: #"^v?\d+(\.\d+){0,3}(-[0-9A-Za-z.]+)?$"#, options: .regularExpression) != nil else {
+              isValidReleaseTag(version) else {
             DispatchQueue.main.async { updateResultHandler?(nil, force, true) }
             return
         }
@@ -75,20 +75,6 @@ private func doCheckUpdate(force: Bool) {
         DispatchQueue.main.async { compareVersionsAndNotify(version, force: force) }
     })
     task.resume()
-}
-
-private func normalize(_ v: String) -> [Int] {
-    return v.trimmingCharacters(in: CharacterSet(charactersIn: "vV")).split(separator: "-")[0]
-        .split(separator: ".").map { Int($0) ?? 0 }
-}
-
-private func isNewer(_ latest: String, than current: String) -> Bool {
-    let a = normalize(latest), b = normalize(current)
-    for i in 0..<max(a.count, b.count) {
-        let x = i < a.count ? a[i] : 0, y = i < b.count ? b[i] : 0
-        if x != y { return x > y }
-    }
-    return false
 }
 
 private func compareVersionsAndNotify(_ latestVersion: String, force: Bool) {

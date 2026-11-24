@@ -79,3 +79,4 @@
 "erase_data_info" = "Den gemte adgangskode, alle indstillinger og login-emnet slettes, og BLEUnlock afsluttes.";
 "erase" = "Slet";
 "privacy_policy" = "Privatlivspolitik";
+"verify_front_window" = "Bekræft låseskærmen før indtastning";

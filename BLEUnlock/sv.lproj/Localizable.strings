@@ -79,3 +79,4 @@
 "erase_data_info" = "Det sparade lösenordet, alla inställningar och inloggningsobjektet raderas, därefter avslutas BLEUnlock.";
 "erase" = "Radera";
 "privacy_policy" = "Integritetspolicy";
+"verify_front_window" = "Verifiera låsskärmen före inmatning";

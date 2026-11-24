@@ -1,13 +1,5 @@
 import Foundation
 import CoreBluetooth
-import Accelerate
-
-/// Strings coming from nearby BLE devices are untrusted: strip control characters and cap the length
-/// before they are shown in the menu (prevents menu spoofing / UI abuse).
-func sanitizeDeviceString(_ s: String, max: Int = 64) -> String {
-    let cleaned = s.unicodeScalars.filter { !CharacterSet.controlCharacters.contains($0) && $0 != "\u{202E}" && $0 != "\u{202D}" }
-    return String(String.UnicodeScalarView(cleaned)).prefix(max).trimmingCharacters(in: .whitespaces)
-}
 
 let DeviceInformation = CBUUID(string:"180A")
 let ManufacturerName = CBUUID(string:"2A29")
@@ -142,8 +134,7 @@ class BLE: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
     var powerWarn = true
     var passiveMode = false
     var thresholdRSSI = -70
-    var latestRSSIs: [Double] = []
-    var latestN: Int = 5
+    var averager = RSSIAverager(size: 5)
     var activeModeTimer : Timer? = nil
     var connectionTimer : Timer? = nil
 
@@ -229,14 +220,7 @@ class BLE: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
     }
     
     func getEstimatedRSSI(rssi: Int) -> Int {
-        if latestRSSIs.count >= latestN {
-            latestRSSIs.removeFirst()
-        }
-        latestRSSIs.append(Double(rssi))
-        var mean: Double = 0.0
-        var sddev: Double = 0.0
-        vDSP_normalizeD(latestRSSIs, 1, nil, 1, &mean, &sddev, vDSP_Length(latestRSSIs.count))
-        return Int(mean)
+        return averager.add(rssi)
     }
 
     func updateMonitoredPeripheral(_ rssi: Int) {
@@ -245,7 +229,7 @@ class BLE: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
             print("Device is close")
             presence = true
             delegate?.updatePresence(presence: presence, reason: "close")
-            latestRSSIs.removeAll() // Avoid bouncing
+            averager.reset() // Avoid bouncing
         }
 
         let estimatedRSSI = getEstimatedRSSI(rssi: rssi)

@@ -30,7 +30,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     var unlockedAt = 0.0
     var inScreensaver = false
     var lastRSSI: Int? = nil
-    var unlockAttempts: [TimeInterval] = []
+    var limiter = UnlockLimiter()
     let confirmDelayMenu = NSMenu()
     let modeMenu = NSMenu()
     var unlockOnlyItems: [NSMenuItem] = []
@@ -188,11 +188,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     func runScript(_ arg: String) {
         guard let directory = try? FileManager.default.url(for: .applicationScriptsDirectory, in: .userDomainMask, appropriateFor: nil, create: true) else { return }
         let file = directory.appendingPathComponent("event")
-        guard let attrs = try? FileManager.default.attributesOfItem(atPath: file.path),
-              attrs[.type] as? FileAttributeType == .typeRegular,
-              (attrs[.ownerAccountID] as? NSNumber)?.uint32Value == getuid(),
-              let perms = attrs[.posixPermissions] as? NSNumber,
-              perms.intValue & 0o022 == 0 else {
+        guard isSafeToRunScript(atPath: file.path) else {
             if FileManager.default.fileExists(atPath: file.path) {
                 print("Refusing to run event script: must be a regular file owned by you and not group/world-writable")
             }
@@ -336,9 +332,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
 
         let delay = max(0.5, Double(prefs.integer(forKey: "confirmDelay")))
         Timer.scheduledTimer(withTimeInterval: delay, repeats: false, block: { _ in
-            guard self.unlockEnabled, self.isScreenLocked(), self.isSessionOnConsole() else { return }
-            // Re-check presence after the confirmation delay: the device must still be near.
-            guard self.ble.presence else { return }
+            // Every guard is re-evaluated here, right before typing (see UnlockPolicy).
+            guard UnlockPolicy.mayTypePassword(self.currentUnlockContext()) else { return }
             guard self.allowUnlockAttempt() else { return }
             guard let password = self.fetchPassword(warn: true) else { return }
 
@@ -356,20 +351,43 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     /// Brute-force / lockout protection: if auto-unlock failed several times in a row
     /// (e.g. the stored password is wrong), stop typing it until the user unlocks manually.
     func allowUnlockAttempt() -> Bool {
-        let limit = prefs.object(forKey: "maxUnlockAttempts") == nil ? 3 : prefs.integer(forKey: "maxUnlockAttempts")
-        guard limit > 0 else { return true }
-        let now = Date().timeIntervalSince1970
-        unlockAttempts = unlockAttempts.filter { now - $0 < 120 }
-        if unlockAttempts.count >= limit {
+        let limit = Clamp.maxAttempts(prefs.object(forKey: "maxUnlockAttempts") == nil ? nil : prefs.integer(forKey: "maxUnlockAttempts"))
+        switch limiter.request(limit: limit, now: Date().timeIntervalSince1970) {
+        case .allowed:
+            return true
+        case .denied:
+            return false
+        case .deniedFirstTime:
             print("Too many unlock attempts; auto-unlock paused until manual unlock")
-            if unlockAttempts.count == limit {
-                unlockAttempts.append(now)
-                deliverNotification(id: lockNotificationId, subtitle: t("notification_unlock_paused"), body: t("notification_unlock_paused_info"))
-            }
+            deliverNotification(id: lockNotificationId, subtitle: t("notification_unlock_paused"), body: t("notification_unlock_paused_info"))
             return false
         }
-        unlockAttempts.append(now)
-        return true
+    }
+
+    func currentUnlockContext() -> UnlockContext {
+        return UnlockContext(
+            unlockEnabled: unlockEnabled, manualLock: manualLock, presence: ble.presence,
+            unlockRSSIEnabled: ble.unlockRSSI != ble.UNLOCK_DISABLED, systemSleep: systemSleep,
+            displaySleep: displaySleep, wakeWithoutUnlocking: prefs.bool(forKey: "wakeWithoutUnlocking"),
+            screenLocked: isScreenLocked(), onConsole: isSessionOnConsole(),
+            frontWindowSafe: !(prefs.object(forKey: "verifyFrontWindow") == nil || prefs.bool(forKey: "verifyFrontWindow"))
+                || FrontWindowPolicy.isSafe(owner: frontWindowOwner()))
+    }
+
+    /// Owner of the front-most large on-screen window (front-to-back order). Reads only window metadata
+    /// (owner name, size) — no screen content, no Screen Recording permission.
+    func frontWindowOwner() -> String? {
+        guard let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else { return nil }
+        let screen = NSScreen.main?.frame.size ?? CGSize(width: 800, height: 600)
+        for w in list {
+            guard let owner = w[kCGWindowOwnerName as String] as? String,
+                  let alpha = w[kCGWindowAlpha as String] as? Double, alpha > 0.05,
+                  let b = w[kCGWindowBounds as String] as? [String: CGFloat],
+                  let width = b["Width"], let height = b["Height"],
+                  width >= screen.width * 0.5, height >= screen.height * 0.5 else { continue }
+            return owner
+        }
+        return nil
     }
 
     @objc func onDisplayWake() {
@@ -406,7 +424,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     }
 
     @objc func onUnlock() {
-        unlockAttempts.removeAll()
+        limiter.reset()
         Timer.scheduledTimer(withTimeInterval: 2, repeats: false, block: { _ in
             print("onUnlock")
             if Date().timeIntervalSince1970 >= self.unlockedAt + 10 {
@@ -460,56 +478,36 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         alert.runModal()
     }
     
+    var passwordStore: PasswordStore {
+        return PasswordStore(service: Bundle.main.bundleIdentifier ?? "BLEUnlock", account: NSUserName())
+    }
+
     func storePassword(_ password: String) {
-        let pw = password.data(using: .utf8)!
-        
-        let query: [String: Any] = [
-            String(kSecClass): kSecClassGenericPassword,
-            String(kSecAttrAccount): NSUserName(),
-            String(kSecAttrService): Bundle.main.bundleIdentifier ?? "BLEUnlock",
-            String(kSecAttrLabel): "BLEUnlock",
-            String(kSecValueData): pw,
-            String(kSecAttrAccessible): kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
-        ]
-        SecItemDelete(query as CFDictionary)
-        let status = SecItemAdd(query as CFDictionary, nil)
-        guard status == errSecSuccess else {
+        do { try passwordStore.store(password) }
+        catch PasswordStore.Failure.status(let status) {
             let err = SecCopyErrorMessageString(status, nil)
             errorModal("Failed to store password to Keychain", info: err as String? ?? "Status \(status)")
-            return
+        } catch {
+            errorModal("Failed to store password to Keychain")
         }
     }
 
     func fetchPassword(warn: Bool = false) -> String? {
-        let query: [String: Any] = [
-            String(kSecClass): kSecClassGenericPassword,
-            String(kSecAttrAccount): NSUserName(),
-            String(kSecAttrService): Bundle.main.bundleIdentifier ?? "BLEUnlock",
-            String(kSecReturnData): kCFBooleanTrue!,
-            String(kSecMatchLimit): kSecMatchLimitOne,
-        ]
-        
-        var item: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &item)
-        if (status == errSecItemNotFound) {
+        do {
+            if let pw = try passwordStore.fetch() { return pw }
             print("Password is not stored")
-            if warn {
-                errorModal(t("password_not_set"))
-            }
+            if warn { errorModal(t("password_not_set")) }
             return nil
-        }
-        guard status == errSecSuccess else {
+        } catch PasswordStore.Failure.status(let status) {
             let info = SecCopyErrorMessageString(status, nil)
             errorModal("Failed to retrieve password", info: info as String? ?? "Status \(status)")
             return nil
-        }
-        guard let data = item as? Data else {
+        } catch {
             errorModal("Failed to convert password")
             return nil
         }
-        return String(data: data, encoding: .utf8)
     }
-    
+
     @objc func askPassword() {
         let msg = NSAlert()
         msg.addButton(withTitle: t("ok"))
@@ -554,12 +552,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     }
 
     func deleteStoredPassword() {
-        let query: [String: Any] = [
-            String(kSecClass): kSecClassGenericPassword,
-            String(kSecAttrAccount): NSUserName(),
-            String(kSecAttrService): Bundle.main.bundleIdentifier ?? "BLEUnlock",
-        ]
-        SecItemDelete(query as CFDictionary)
+        passwordStore.delete()
     }
 
     func confirm(_ msg: String, info: String, button: String) -> Bool {
@@ -736,6 +729,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
 
     @objc func checkUpdateNow() {
         checkUpdate(force: true)
+    }
+
+    @objc func toggleVerifyFrontWindow(_ menuItem: NSMenuItem) {
+        let value = !(prefs.object(forKey: "verifyFrontWindow") == nil || prefs.bool(forKey: "verifyFrontWindow"))
+        prefs.set(value, forKey: "verifyFrontWindow")
+        menuItem.state = value ? .on : .off
     }
 
     @objc func toggleAutoUpdates(_ menuItem: NSMenuItem) {
@@ -922,7 +921,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         for n in [1, 2, 3, 5] { add(maxAttemptsMenu, "\(n)", #selector(setMaxAttempts), tag: n) }
         maxAttemptsMenu.delegate = self
         let wakeNoUnlock = add(securityMenu, t("wake_without_unlocking"), #selector(toggleWakeWithoutUnlocking), symbol: "moon.zzz", state: on("wakeWithoutUnlocking"))
-        unlockOnlyItems += [setPw, rmPw, attemptsItem, wakeNoUnlock]
+        let verifyItem = add(securityMenu, t("verify_front_window"), #selector(toggleVerifyFrontWindow), symbol: "checkmark.shield", state: prefs.object(forKey: "verifyFrontWindow") == nil || prefs.bool(forKey: "verifyFrontWindow"))
+        unlockOnlyItems += [setPw, rmPw, attemptsItem, wakeNoUnlock, verifyItem]
         securityMenu.addItem(NSMenuItem.separator())
         add(securityMenu, t("erase_data"), #selector(eraseAllData), symbol: "xmark.bin")
 

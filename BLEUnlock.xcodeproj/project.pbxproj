@@ -25,6 +25,14 @@
 		3DD4B666226C1DF200451B7B /* BLE.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DD4B665226C1DF200451B7B /* BLE.swift */; };
 		3DD4B669226C1E3700451B7B /* login.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3DD4B668226C1E3700451B7B /* login.framework */; };
 		A1B2C3D4E5F600000000F002 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F600000000F001 /* PrivacyInfo.xcprivacy */; };
+		C0DE00000000000000000101 /* Sanitize.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000100 /* Sanitize.swift */; };
+		C0DE00000000000000000103 /* Versioning.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000102 /* Versioning.swift */; };
+		C0DE00000000000000000105 /* UnlockLimiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000104 /* UnlockLimiter.swift */; };
+		C0DE00000000000000000107 /* UnlockPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000106 /* UnlockPolicy.swift */; };
+		C0DE00000000000000000109 /* Clamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000108 /* Clamp.swift */; };
+		C0DE0000000000000000010B /* ScriptGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE0000000000000000010A /* ScriptGuard.swift */; };
+		C0DE0000000000000000010D /* RSSIAverager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE0000000000000000010C /* RSSIAverager.swift */; };
+		C0DE0000000000000000010F /* PasswordStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE0000000000000000010E /* PasswordStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -85,6 +93,14 @@
 		A1B2C3D4E5F6000000000004 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/AboutBox.strings; sourceTree = "<group>"; };
 		A1B2C3D4E5F6000000000005 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
 		A1B2C3D4E5F600000000F001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		C0DE00000000000000000100 /* Sanitize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Sanitize.swift; sourceTree = "<group>"; };
+		C0DE00000000000000000102 /* Versioning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Versioning.swift; sourceTree = "<group>"; };
+		C0DE00000000000000000104 /* UnlockLimiter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/UnlockLimiter.swift; sourceTree = "<group>"; };
+		C0DE00000000000000000106 /* UnlockPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/UnlockPolicy.swift; sourceTree = "<group>"; };
+		C0DE00000000000000000108 /* Clamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Clamp.swift; sourceTree = "<group>"; };
+		C0DE0000000000000000010A /* ScriptGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ScriptGuard.swift; sourceTree = "<group>"; };
+		C0DE0000000000000000010C /* RSSIAverager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/RSSIAverager.swift; sourceTree = "<group>"; };
+		C0DE0000000000000000010E /* PasswordStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/PasswordStore.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -144,6 +160,14 @@
 			isa = PBXGroup;
 			children = (
 				3D95379322784D550017D8B9 /* AboutBox.swift */,
+				C0DE00000000000000000100 /* Sanitize.swift */,
+				C0DE00000000000000000102 /* Versioning.swift */,
+				C0DE00000000000000000104 /* UnlockLimiter.swift */,
+				C0DE00000000000000000106 /* UnlockPolicy.swift */,
+				C0DE00000000000000000108 /* Clamp.swift */,
+				C0DE0000000000000000010A /* ScriptGuard.swift */,
+				C0DE0000000000000000010C /* RSSIAverager.swift */,
+				C0DE0000000000000000010E /* PasswordStore.swift */,
 				3D953799227853E20017D8B9 /* AboutBox.xib */,
 				3D600A35226CC1A40068FB7B /* Localizable.strings */,
 				A1B2C3D4E5F600000000F001 /* PrivacyInfo.xcprivacy */,
@@ -342,6 +366,14 @@
 				3D95379522784D550017D8B9 /* AboutBox.swift in Sources */,
 				3D6070E226DBC68E00EE4E48 /* LEDeviceInfo.swift in Sources */,
 				3D79FD7D226C335100A373C0 /* appleDeviceNames.swift in Sources */,
+				C0DE00000000000000000101 /* Sanitize.swift in Sources */,
+				C0DE00000000000000000103 /* Versioning.swift in Sources */,
+				C0DE00000000000000000105 /* UnlockLimiter.swift in Sources */,
+				C0DE00000000000000000107 /* UnlockPolicy.swift in Sources */,
+				C0DE00000000000000000109 /* Clamp.swift in Sources */,
+				C0DE0000000000000000010B /* ScriptGuard.swift in Sources */,
+				C0DE0000000000000000010D /* RSSIAverager.swift in Sources */,
+				C0DE0000000000000000010F /* PasswordStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

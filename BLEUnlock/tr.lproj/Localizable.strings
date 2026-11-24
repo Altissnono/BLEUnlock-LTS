@@ -79,3 +79,4 @@
 "erase_data_info" = "Kayıtlı parola, tüm ayarlar ve oturum açma öğesi silinir, ardından BLEUnlock kapanır.";
 "erase" = "Sil";
 "privacy_policy" = "Gizlilik Politikası";
+"verify_front_window" = "Yazmadan Önce Kilit Ekranını Doğrula";
