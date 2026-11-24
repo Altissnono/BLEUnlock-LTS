@@ -1,10 +1,11 @@
 # BLEUnlock
 
-## Please note that I don't distribute this app on the Mac App Store. You can find it here for free! 
+## BLEUnlock LTS — this app is not distributed on the Mac App Store. Download it here for free.
 
-![CI](https://github.com/ts1/BLEUnlock/workflows/CI/badge.svg)
-![Github All Releases](https://img.shields.io/github/downloads/ts1/BLEUnlock/total.svg)
-[![Buy me a coffee](img/buymeacoffee.svg)](https://www.buymeacoffee.com/tsone)
+![CI](https://github.com/Altissnono/BLEUnlock-LTS/actions/workflows/test.yml/badge.svg)
+![Github All Releases](https://img.shields.io/github/downloads/Altissnono/BLEUnlock-LTS/total.svg)
+
+BLEUnlock LTS is a maintained fork of [ts1/BLEUnlock](https://github.com/ts1/BLEUnlock) (MIT) with modernized APIs, extra security hardening and more settings. See [What's new in LTS](#whats-new-in-lts).
 
 BLEUnlock is a small menu bar utility that locks and unlocks your Mac by proximity of your iPhone, Apple Watch, or any other Bluetooth Low Energy device.
 
@@ -24,20 +25,15 @@ This document is also available in [Japanese (日本語版はこちら)](README.
 ## Requirements
 
 - A Mac with Bluetooth Low Energy support
-- macOS 10.13 (High Sierra) or later
+- macOS 12 (Monterey) or later
 - iPhone 5s or newer, Apple Watch (all), or another BLE device that has [static MAC address](#notes-on-mac-address) and transmits signal periodically
 
 ## Installation
 
-### Using Homebrew Cask
+Download the zip file from [Releases](https://github.com/Altissnono/BLEUnlock-LTS/releases), unzip and move to the Applications folder.
 
-```
-brew install bleunlock
-```
-
-### Manual installation
-
-Download the zip file from [Releases](https://github.com/ts1/BLEUnlock/releases), unzip and move to the Applications folder.
+> Releases are built by GitHub Actions and are **ad-hoc signed, not notarized**. On first launch, right-click the app and choose *Open* (or run `xattr -dr com.apple.quarantine /Applications/BLEUnlock.app`). Verify the download with `SHA256SUMS.txt` attached to each release, or build it yourself from source with Xcode.
+> Each new build has a different signature, so macOS may ask you to grant Bluetooth/Accessibility again after an update.
 
 ## Setting up
 
@@ -203,13 +199,10 @@ do shell script "/usr/local/bin/ffmpeg -f avfoundation -r 30 -i 0 -frames:v 1 -y
 This app is required because BLEUnlock does not have Camera permission.
 Giving permission to this app resolves the problem.
 
-## Funding
-
-The annual Apple Developer Program fee is funded by donations.
-
-If you like this app, I'd appreciate it if you could make a donation via [Buy Me a Coffee](https://www.buymeacoffee.com/tsone) or [PayPal Me](https://www.paypal.com/paypalme/my/profile) so I can keep up.
-
 ## Credits
+
+Original author: [Takeshi Sone (ts1)](https://github.com/ts1/BLEUnlock). Contributors to the original project:
+
 
 - [peiit](https://github.com/peiit): Chinese translation
 - [wenmin-wu](https://github.com/wenmin-wu): Minimum RSSI and moving average
@@ -229,11 +222,9 @@ They are originally designed by Google LLC and licensed under Apache License ver
 
 MIT
 
-Copyright © 2019-2022 Takeshi Sone.
+Copyright © 2019-2022 Takeshi Sone. LTS modifications © 2026 Altissnono.
 
-## LTS fork changes
-
-Maintained fork of [ts1/BLEUnlock](https://github.com/ts1/BLEUnlock) (requires macOS 12+).
+## What's new in LTS
 
 **1.14.0 – security**
 - Auto-unlock lockout: stops typing the password after N failed attempts (default 3 in 2 min) until you unlock manually.
