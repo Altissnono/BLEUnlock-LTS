@@ -257,6 +257,7 @@ Copyright © 2019-2022 Takeshi Sone. LTS modifications © 2026 Altissnono.
 ## What's new in LTS
 
 ### 3.1.0
+- Release process: `scripts/release.sh X.Y.Z` bumps the version, runs the tests, tags and pushes; GitHub Actions then builds, attests and publishes (publishing on a plain push to `master` was removed: the workflow token cannot create tags on commits that modify workflow files).
 - **Tests:** 33 unit tests for the security-critical logic (`swift test`, run in CI) + extended static checks.
 - **Window check before typing:** the password is typed only if the lock screen is really in front (option *Security → Verify Lock Screen Before Typing*, on by default).
 - **Release provenance:** releases carry a Sigstore build-provenance attestation — `gh attestation verify BLEUnlock-<version>.zip --repo Altissnono/BLEUnlock-LTS`. GitHub Actions pinned by commit SHA; `CODEOWNERS`.

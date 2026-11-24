@@ -2,8 +2,7 @@ name: Release
 
 on:
   push:
-    branches: [master]
-  workflow_dispatch:
+    tags: ['v*']   # the tag is pushed by the maintainer (scripts/release.sh); the workflow only builds and publishes
 
 permissions:
   contents: write        # create the release
@@ -28,9 +27,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           v=$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' BLEUnlock/Info.plist)
+          if [ "v$v" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match Info.plist version v$v"; exit 1
+          fi
           echo "version=$v" >> "$GITHUB_OUTPUT"
           if gh release view "v$v" >/dev/null 2>&1; then
-            echo "Release v$v already exists - bump CFBundleShortVersionString in BLEUnlock/Info.plist to publish a new one."
+            echo "Release v$v already exists - nothing to do."
             echo "publish=false" >> "$GITHUB_OUTPUT"
           else
             echo "publish=true" >> "$GITHUB_OUTPUT"
@@ -101,7 +103,7 @@ jobs:
         run: |
           set -euxo pipefail
           for attempt in 1 2 3; do
-            if gh release create "v$VERSION" --target "$GITHUB_SHA" "BLEUnlock-$VERSION.zip" SHA256SUMS.txt \
+            if gh release create "v$VERSION" --verify-tag "BLEUnlock-$VERSION.zip" SHA256SUMS.txt \
                  --title "BLEUnlock LTS $VERSION" --generate-notes; then exit 0; fi
             # another run may have published the same version meanwhile: that is fine
             if gh release view "v$VERSION" >/dev/null 2>&1; then echo "Release already exists"; exit 0; fi
