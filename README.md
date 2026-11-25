@@ -256,6 +256,12 @@ Copyright © 2019-2022 Takeshi Sone. LTS modifications © 2026 Altissnono.
 
 ## What's new in LTS
 
+### 3.2.3
+- **Apple Watch reliability** (found from a real diagnostics log: a Watch's raw RSSI jumps by 25–30 dB between two readings):
+  - A pending lock is now cancelled only when the signal recovers **5 dB above** the lock threshold (before, a signal hovering at the threshold kept cancelling the lock, so the Mac never locked).
+  - "Device is close" (→ unlock) now needs **at least 2 of the last 3** readings above the unlock threshold, so a single spike can no longer unlock the Mac.
+  - Unlock decisions are logged (which guard blocked, or "typing password"). 54 unit tests.
+
 ### 3.2.2
 - **Local diagnostics:** key presence/lock decisions (signal numbers, timers, lock result) are written to the macOS unified log (subsystem `io.github.altissnono.BLEUnlock`, view with `log show --predicate 'subsystem == "io.github.altissnono.BLEUnlock"' --info --last 10m`). No device names/identifiers, passwords or personal data; nothing leaves the Mac.
 

@@ -36,6 +36,7 @@
 		C0DE00000000000000000201 /* Calibration.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000200 /* Calibration.swift */; };
 		C0DE00000000000000000203 /* PresenceCombiner.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000202 /* PresenceCombiner.swift */; };
 		C0DE00000000000000000301 /* DeviceCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000300 /* DeviceCatalog.swift */; };
+		C0DE00000000000000000401 /* ProximityGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000400 /* ProximityGate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -107,6 +108,7 @@
 		C0DE00000000000000000200 /* Calibration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Calibration.swift; sourceTree = "<group>"; };
 		C0DE00000000000000000202 /* PresenceCombiner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/PresenceCombiner.swift; sourceTree = "<group>"; };
 		C0DE00000000000000000300 /* DeviceCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/DeviceCatalog.swift; sourceTree = "<group>"; };
+		C0DE00000000000000000400 /* ProximityGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ProximityGate.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -166,6 +168,7 @@
 			isa = PBXGroup;
 			children = (
 				3D95379322784D550017D8B9 /* AboutBox.swift */,
+				C0DE00000000000000000400 /* ProximityGate.swift */,
 				C0DE00000000000000000300 /* DeviceCatalog.swift */,
 				C0DE00000000000000000200 /* Calibration.swift */,
 				C0DE00000000000000000202 /* PresenceCombiner.swift */,
@@ -375,6 +378,7 @@
 				3D95379522784D550017D8B9 /* AboutBox.swift in Sources */,
 				3D6070E226DBC68E00EE4E48 /* LEDeviceInfo.swift in Sources */,
 				3D79FD7D226C335100A373C0 /* appleDeviceNames.swift in Sources */,
+				C0DE00000000000000000401 /* ProximityGate.swift in Sources */,
 				C0DE00000000000000000301 /* DeviceCatalog.swift in Sources */,
 				C0DE00000000000000000201 /* Calibration.swift in Sources */,
 				C0DE00000000000000000203 /* PresenceCombiner.swift in Sources */,

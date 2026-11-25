@@ -138,6 +138,7 @@ class BLE: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
     /// Called with every valid raw RSSI sample of the monitored device (used by the calibration assistant).
     var onRawRSSI: ((Int) -> Void)?
     private var lastDiagLog = 0.0
+    private var closeGate = CloseGate()
     private var invalidReads = 0
     var lockRSSI = -80 { didSet { follower?.lockRSSI = lockRSSI } }
     var unlockRSSI = -60 { didSet { follower?.unlockRSSI = unlockRSSI } }
@@ -227,6 +228,7 @@ class BLE: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
         signalTimer = Timer.scheduledTimer(withTimeInterval: signalTimeout, repeats: false, block: { _ in
             print("Device is lost")
             diagLog.info("signal lost: no valid reading for \(self.signalTimeout, privacy: .public)s -> presence false")
+            self.closeGate.reset()
             self.delegate?.updateRSSI(rssi: nil, active: false)
             if self.presence {
                 self.presence = false
@@ -269,8 +271,10 @@ class BLE: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
     func updateMonitoredPeripheral(_ rssi: Int) {
         onRawRSSI?(rssi)
         // print(String(format: "rssi: %d", rssi))
-        if rssi >= (unlockRSSI == UNLOCK_DISABLED ? lockRSSI : unlockRSSI) && !presence {
+        closeGate.add(rssi)
+        if closeGate.isClose(threshold: unlockRSSI == UNLOCK_DISABLED ? lockRSSI : unlockRSSI) && !presence {
             print("Device is close")
+            diagLog.info("device close: at least 2 of the last 3 readings >= \(self.unlockRSSI == self.UNLOCK_DISABLED ? self.lockRSSI : self.unlockRSSI, privacy: .public) dBm")
             presence = true
             delegate?.updatePresence(presence: presence, reason: "close")
             averager.reset() // Avoid bouncing
@@ -285,18 +289,20 @@ class BLE: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
             invalidReads = 0
         }
 
-        if estimatedRSSI >= (lockRSSI == LOCK_DISABLED ? unlockRSSI : lockRSSI) {
+        let lockThreshold = lockRSSI == LOCK_DISABLED ? unlockRSSI : lockRSSI
+        if LockTimerPolicy.shouldCancel(estimated: estimatedRSSI, lockThreshold: lockThreshold) {
             if let timer = proximityTimer {
                 timer.invalidate()
-                diagLog.info("lock timer cancelled: est \(estimatedRSSI, privacy: .public) back above \(self.lockRSSI, privacy: .public)")
+                diagLog.info("lock timer cancelled: est \(estimatedRSSI, privacy: .public) recovered above \(lockThreshold + LockTimerPolicy.recoveryMargin, privacy: .public)")
                 print("Proximity timer canceled")
                 proximityTimer = nil
             }
-        } else if presence && proximityTimer == nil {
+        } else if presence && proximityTimer == nil && LockTimerPolicy.shouldStart(estimated: estimatedRSSI, lockThreshold: lockThreshold) {
             diagLog.info("below lock threshold (est \(estimatedRSSI, privacy: .public) < \(self.lockRSSI, privacy: .public)): locking in \(self.proximityTimeout, privacy: .public)s unless signal recovers")
             proximityTimer = Timer.scheduledTimer(withTimeInterval: proximityTimeout, repeats: false, block: { _ in
                 print("Device is away")
                 diagLog.info("lock timer elapsed -> presence false (away)")
+                self.closeGate.reset()
                 self.presence = false
                 self.delegate?.updatePresence(presence: self.presence, reason: "away")
                 self.proximityTimer = nil

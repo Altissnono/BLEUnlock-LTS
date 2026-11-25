@@ -260,3 +260,12 @@ For a local proximity‑unlock utility the implementation is **careful and small
 # Addendum — 3.2.2 diagnostics logging
 
 Key decisions are logged with `os.Logger` (category `presence`): signal numbers (rate-limited), timer start/cancel, presence events, lock result code. **Never** logged: device names/UUIDs/MACs, passwords, settings values beyond thresholds. Strings are marked `.public` deliberately (numbers/state only). This supersedes V‑11's "no logging in release builds": prints are still stripped, but these local diagnostics are always on. They stay in the local unified log (no network).
+
+---
+
+# Addendum — 3.2.3 findings from a real Apple Watch log
+
+Evidence: local diagnostics log of an actual test (Apple Watch Series 10, active mode). Raw RSSI near the Mac −38…−47 dBm; "10 m away" −64…−73 dBm with swings of up to 30 dB between consecutive samples (e.g. −40 → −69).
+- **V‑15 — MEDIUM (reliability) — fixed.** With the lock threshold at −65 dBm, a lock timer was started at est −67 and cancelled 4 s later at est −64: any recovery above the threshold cancelled it, so a signal hovering at the threshold never locked. Fix: cancel only above threshold + 5 dB (`LockTimerPolicy`, unit-tested with the observed values).
+- **V‑16 — MEDIUM (security) — fixed.** The "device is close" decision (which leads to typing the password) used a **single raw reading** ≥ unlock threshold, while the log shows single-sample spikes of +20 dB. Right after a lock, one such spike could have unlocked the Mac. Fix: ≥ 2 of the last 3 raw readings (`CloseGate`, unit-tested). Cost: unlock is detected ~1 reading (1–2 s) later.
+- **Observation:** the log confirms that the lock mechanism itself works on macOS 27.2 (`SACLockScreenImmediate` returned 0). V‑01 (RSSI can be spoofed) is unchanged; a noisy signal also means a threshold must sit ≥ 10 dB away from both the "near" and "far" readings — the calibration assistant (*Proximity → Calibrate Signal…*) computes this; for this log it would suggest roughly lock −55 / unlock −50.

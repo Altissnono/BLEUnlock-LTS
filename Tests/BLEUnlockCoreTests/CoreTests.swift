@@ -266,6 +266,39 @@ final class DeviceCatalogTests: XCTestCase {
     }
 }
 
+final class ProximityGateTests: XCTestCase {
+    func testSingleSpikeNeverCounts() {
+        var g = CloseGate()
+        for r in [-72, -70, -73, -49] { g.add(r) }          // one -49 spike among far readings (seen on a real Watch)
+        XCTAssertFalse(g.isClose(threshold: -60))
+    }
+    func testTwoOfLastThree() {
+        var g = CloseGate()
+        g.add(-70); g.add(-50); XCTAssertFalse(g.isClose(threshold: -60))   // 1 of 2
+        g.add(-55); XCTAssertTrue(g.isClose(threshold: -60))                // 2 of 3
+        g.add(-75); XCTAssertTrue(g.isClose(threshold: -60))                // window -50,-55,-75: still 2 of 3
+        g.add(-75); XCTAssertFalse(g.isClose(threshold: -60))               // window -55,-75,-75: only 1 of 3
+    }
+    func testNeedsAtLeastTwoSamplesAndReset() {
+        var g = CloseGate()
+        g.add(-30); XCTAssertFalse(g.isClose(threshold: -60))
+        g.add(-31); XCTAssertTrue(g.isClose(threshold: -60))
+        g.reset(); XCTAssertFalse(g.isClose(threshold: -60))
+    }
+    func testLockTimerNotCancelledByHoveringSignal() {
+        // Real log: threshold -65, estimate -64 right after -67 cancelled the lock → Mac never locked.
+        XCTAssertFalse(LockTimerPolicy.shouldCancel(estimated: -64, lockThreshold: -65))
+        XCTAssertFalse(LockTimerPolicy.shouldCancel(estimated: -61, lockThreshold: -65))
+        XCTAssertTrue(LockTimerPolicy.shouldCancel(estimated: -60, lockThreshold: -65))
+        XCTAssertTrue(LockTimerPolicy.shouldCancel(estimated: -41, lockThreshold: -65))
+    }
+    func testLockTimerStartsBelowThreshold() {
+        XCTAssertTrue(LockTimerPolicy.shouldStart(estimated: -67, lockThreshold: -65))
+        XCTAssertFalse(LockTimerPolicy.shouldStart(estimated: -65, lockThreshold: -65))
+        XCTAssertFalse(LockTimerPolicy.shouldStart(estimated: -50, lockThreshold: -65))
+    }
+}
+
 final class ScriptGuardTests: XCTestCase {
     private var dir: URL!
     override func setUpWithError() throws {

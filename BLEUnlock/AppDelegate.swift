@@ -442,11 +442,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         let delay = max(0.5, Double(prefs.integer(forKey: "confirmDelay")))
         Timer.scheduledTimer(withTimeInterval: delay, repeats: false, block: { _ in
             // Every guard is re-evaluated here, right before typing (see UnlockPolicy).
-            guard UnlockPolicy.mayTypePassword(self.currentUnlockContext()) else { return }
+            let ctx = self.currentUnlockContext()
+            guard UnlockPolicy.mayTypePassword(ctx) else {
+                diagLog.info("unlock blocked: enabled \(ctx.unlockEnabled, privacy: .public) manualLock \(ctx.manualLock, privacy: .public) near \(ctx.presence, privacy: .public) unlockRSSIon \(ctx.unlockRSSIEnabled, privacy: .public) sysSleep \(ctx.systemSleep, privacy: .public) dispSleep \(ctx.displaySleep, privacy: .public) wakeNoUnlock \(ctx.wakeWithoutUnlocking, privacy: .public) locked \(ctx.screenLocked, privacy: .public) console \(ctx.onConsole, privacy: .public) frontOK \(ctx.frontWindowSafe, privacy: .public)")
+                return
+            }
             guard self.allowUnlockAttempt() else { return }
             guard let password = self.fetchPassword(warn: true) else { return }
 
             print("Entering password")
+            diagLog.info("typing password (unlock)")
             self.unlockedAt = Date().timeIntervalSince1970
             self.fakeKeyStrokes(password)
             self.playNowPlaying()
