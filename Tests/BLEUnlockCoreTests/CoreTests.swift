@@ -146,6 +146,16 @@ final class RSSIAveragerTests: XCTestCase {
     }
 }
 
+final class ValidRSSITests: XCTestCase {
+    func testPlausibleValuesAccepted() {
+        for v in [-1, -30, -60, -90, -100, -127] { XCTAssertEqual(validRSSI(v), v) }
+    }
+    /// 127 = "not available" and 0 = undefined value on a failed read: must never read as "very close".
+    func testUnavailableAndErrorValuesRejected() {
+        for v in [127, 0, 1, 5, 126, 128, -128, -1000, Int.max, Int.min] { XCTAssertNil(validRSSI(v), "\(v)") }
+    }
+}
+
 final class ScriptGuardTests: XCTestCase {
     private var dir: URL!
     override func setUpWithError() throws {

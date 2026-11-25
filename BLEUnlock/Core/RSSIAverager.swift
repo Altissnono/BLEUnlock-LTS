@@ -15,3 +15,10 @@ struct RSSIAverager {
 
     mutating func reset() { samples.removeAll() }
 }
+
+/// CoreBluetooth reports 127 when the RSSI is unavailable and an undefined value (often 0) when a read fails.
+/// Such a reading must NEVER be interpreted as "the device is right next to the Mac" — that would keep the
+/// Mac unlocked (or unlock it) while the device is actually gone. Returns nil for anything implausible.
+func validRSSI(_ raw: Int) -> Int? {
+    return (-127 ... -1).contains(raw) ? raw : nil
+}

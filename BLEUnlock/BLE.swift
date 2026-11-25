@@ -295,7 +295,7 @@ class BLE: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
                         advertisementData: [String : Any],
                         rssi RSSI: NSNumber)
     {
-        let rssi = RSSI.intValue > 0 ? 0 : RSSI.intValue
+        guard let rssi = validRSSI(RSSI.intValue) else { return }  // 127/0 = unavailable, never "close"
         if let uuid = monitoredUUID {
             if peripheral.identifier.description == uuid.description {
                 if monitoredPeripheral == nil {
@@ -362,7 +362,12 @@ class BLE: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
 
     func peripheral(_ peripheral: CBPeripheral, didReadRSSI RSSI: NSNumber, error: Error?) {
         guard peripheral == monitoredPeripheral else { return }
-        let rssi = RSSI.intValue > 0 ? 0 : RSSI.intValue
+        // A failed or unavailable read must not count as a signal: it would reset the lost-signal timer and
+        // cancel the lock timer. lastReadAt is not updated either, so active mode falls back to passive.
+        guard error == nil, let rssi = validRSSI(RSSI.intValue) else {
+            print("Ignoring invalid RSSI read")
+            return
+        }
         //print("readRSSI \(rssi)dBm")
         updateMonitoredPeripheral(rssi)
         lastReadAt = Date().timeIntervalSince1970

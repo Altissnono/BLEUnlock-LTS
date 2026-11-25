@@ -234,3 +234,13 @@ For a local proximity‑unlock utility the implementation is **careful and small
 **Supply chain (V‑10 closed).** All GitHub Actions are pinned to full commit SHAs (checked by `scripts/security-check.sh`). Releases now carry a signed **build-provenance attestation** (Sigstore, `actions/attest-build-provenance`); verify with `gh attestation verify BLEUnlock-<version>.zip --repo Altissnono/BLEUnlock-LTS`. *Not yet observed working end-to-end on GitHub at the time of writing.*
 
 **Repository governance (open, needs the owner in GitHub settings).** Pushing to the repository is limited to the owner and invited collaborators; outside contributors can only open pull requests from forks. To *enforce* this, enable a branch ruleset on `master`: require pull request + status check `build`, block force pushes and deletions, require code-owner review (`.github/CODEOWNERS` is in place), and in Settings → Actions → General require approval for all outside collaborators.
+
+---
+
+# Addendum — 3.1.1 signal-reliability finding
+
+**V‑14 — MEDIUM (reliability + security) — fixed in 3.1.1.** *Confirmed in the code, effect on real hardware not verified (no Apple Watch/iPhone available to test).*
+- **Cause:** in `BLE.swift` every RSSI value `> 0` was rewritten to `0 dBm` ("strongest possible signal"), and `peripheral(_:didReadRSSI:error:)` ignored its `error` parameter. CoreBluetooth reports `127` when RSSI is unavailable and an undefined value when a read fails (e.g. device disconnected).
+- **Impact:** a failed/unavailable read looked like "the device is touching the Mac": it cancelled the pending lock timer and reset the "signal lost" timer, and `lastReadAt` kept active mode alive. Result: the Mac may fail to lock after the device (e.g. a Watch) walked away, or treat a gone device as present for unlocking.
+- **Fix:** `validRSSI()` (Core, unit-tested) accepts only −127…−1 dBm; failed or implausible reads are ignored — they no longer reset timers, so the existing "signal lost" timeout locks the Mac.
+- **Residual:** a BLE tag that reports exactly 0 dBm legitimately would now be ignored (considered implausible). RSSI itself remains forgeable (V‑01).
