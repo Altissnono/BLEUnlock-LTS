@@ -9,10 +9,6 @@ permissions:
   id-token: write        # sign the provenance attestation (Sigstore)
   attestations: write    # store the attestation
 
-concurrency:
-  group: release
-  cancel-in-progress: false
-
 jobs:
   release:
     runs-on: macos-latest
