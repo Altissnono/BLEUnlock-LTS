@@ -333,7 +333,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
             let url = URL(fileURLWithPath: "/System/Library/CoreServices/ScreenSaverEngine.app")
             NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration(), completionHandler: nil)
         } else {
-            if SACLockScreenImmediate() != 0 {
+            let rc = SACLockScreenImmediate()
+            diagLog.info("SACLockScreenImmediate returned \(rc, privacy: .public)")
+            if rc != 0 {
                 print("Failed to lock screen")
             }
             if prefs.bool(forKey: "sleepDisplay") {
@@ -348,6 +350,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     }
 
     func handlePresence(_ presence: Bool, _ reason: String) {
+        diagLog.info("presence event: \(presence ? "near" : "away", privacy: .public) (\(reason, privacy: .public)) | combined near \(self.combinedPresence(), privacy: .public) | screen locked \(self.isScreenLocked(), privacy: .public) | lock enabled \(self.ble.lockRSSI != self.ble.LOCK_DISABLED, privacy: .public)")
         if presence {
             if ble.unlockRSSI != ble.UNLOCK_DISABLED {
                 UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [lockNotificationId])
@@ -363,8 +366,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
             }
         } else {
             // With two devices the Mac is locked only when ALL of them are away.
-            guard !combinedPresence() else { return }
+            guard !combinedPresence() else { diagLog.info("not locking: another device is still near"); return }
             if (!isScreenLocked() && ble.lockRSSI != ble.LOCK_DISABLED) {
+                diagLog.info("locking screen now")
                 pauseNowPlaying()
                 lockOrSaveScreen()
                 notifyUser(reason)

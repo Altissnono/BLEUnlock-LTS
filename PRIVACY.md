@@ -12,6 +12,7 @@
 | Identifier (UUID), name and signal strength (RSSI) of the Bluetooth device you choose, and of nearby BLE devices while the device list is open | Detect proximity, show the device list | UUID of the chosen device in app settings (`UserDefaults`); everything else in memory only | **No** |
 | Your Mac login password (only in *Lock & Unlock* mode) | Type it on the lock screen | macOS Keychain, "this device only" | **No** |
 | Settings (thresholds, delays, options) | Configuration | `UserDefaults` | **No** |
+| Diagnostics (signal strength numbers, timers, lock decisions — no device names/identifiers) | Troubleshooting | macOS unified log on your Mac (automatically rotated by macOS) | **No** |
 | Optional user script `event` | Run your own automation | `~/Library/Application Scripts/` (yours) | Only if *your* script sends it |
 
 *Lock only* mode never asks for or stores a password and does not need the Accessibility permission.

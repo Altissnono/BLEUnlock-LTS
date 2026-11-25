@@ -1,5 +1,6 @@
 import Cocoa
 import UserNotifications
+import os
 
 let repoSlug = "Altissnono/BLEUnlock-LTS"
 let releasesURL = URL(string: "https://github.com/\(repoSlug)/releases")!
@@ -94,3 +95,7 @@ private func compareVersionsAndNotify(_ latestVersion: String, force: Bool) {
 /// Release builds: no console logging (avoids leaking state into system logs).
 @inline(__always) func print(_ items: Any..., separator: String = " ", terminator: String = "\n") {}
 #endif
+
+/// Local diagnostics via the macOS unified log (Console.app / `log show`). Stays on this Mac.
+/// Contains only signal numbers and decisions — never device names/identifiers, passwords or personal data.
+let diagLog = Logger(subsystem: "io.github.altissnono.BLEUnlock", category: "presence")

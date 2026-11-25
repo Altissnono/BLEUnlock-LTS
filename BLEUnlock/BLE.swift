@@ -1,5 +1,6 @@
 import Foundation
 import CoreBluetooth
+import os
 
 let DeviceInformation = CBUUID(string:"180A")
 let ManufacturerName = CBUUID(string:"2A29")
@@ -136,6 +137,8 @@ class BLE: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
     weak var follower: BLE?
     /// Called with every valid raw RSSI sample of the monitored device (used by the calibration assistant).
     var onRawRSSI: ((Int) -> Void)?
+    private var lastDiagLog = 0.0
+    private var invalidReads = 0
     var lockRSSI = -80 { didSet { follower?.lockRSSI = lockRSSI } }
     var unlockRSSI = -60 { didSet { follower?.unlockRSSI = unlockRSSI } }
     var proximityTimeout = 5.0 { didSet { follower?.proximityTimeout = proximityTimeout } }
@@ -209,6 +212,7 @@ class BLE: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
             centralMgr.cancelPeripheralConnection(p)
         }
         monitoredUUID = uuid
+        diagLog.info("monitor started (lock \(self.lockRSSI, privacy: .public) dBm, unlock \(self.unlockRSSI, privacy: .public) dBm, lock delay \(self.proximityTimeout, privacy: .public)s, no-signal timeout \(self.signalTimeout, privacy: .public)s, passive \(self.passiveMode, privacy: .public))")
         proximityTimer?.invalidate()
         resetSignalTimer()
         presence = true
@@ -222,6 +226,7 @@ class BLE: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
         signalTimer?.invalidate()
         signalTimer = Timer.scheduledTimer(withTimeInterval: signalTimeout, repeats: false, block: { _ in
             print("Device is lost")
+            diagLog.info("signal lost: no valid reading for \(self.signalTimeout, privacy: .public)s -> presence false")
             self.delegate?.updateRSSI(rssi: nil, active: false)
             if self.presence {
                 self.presence = false
@@ -273,16 +278,25 @@ class BLE: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
 
         let estimatedRSSI = getEstimatedRSSI(rssi: rssi)
         delegate?.updateRSSI(rssi: estimatedRSSI, active: activeModeTimer != nil)
+        let now = Date().timeIntervalSince1970
+        if now - lastDiagLog >= 5 {   // rate-limited
+            lastDiagLog = now
+            diagLog.info("rssi raw \(rssi, privacy: .public) est \(estimatedRSSI, privacy: .public) | lock<\(self.lockRSSI, privacy: .public) | presence \(self.presence, privacy: .public) | lockTimer \(self.proximityTimer != nil, privacy: .public) | mode \(self.activeModeTimer != nil ? "active" : "passive", privacy: .public) | ignoredReads \(self.invalidReads, privacy: .public)")
+            invalidReads = 0
+        }
 
         if estimatedRSSI >= (lockRSSI == LOCK_DISABLED ? unlockRSSI : lockRSSI) {
             if let timer = proximityTimer {
                 timer.invalidate()
+                diagLog.info("lock timer cancelled: est \(estimatedRSSI, privacy: .public) back above \(self.lockRSSI, privacy: .public)")
                 print("Proximity timer canceled")
                 proximityTimer = nil
             }
         } else if presence && proximityTimer == nil {
+            diagLog.info("below lock threshold (est \(estimatedRSSI, privacy: .public) < \(self.lockRSSI, privacy: .public)): locking in \(self.proximityTimeout, privacy: .public)s unless signal recovers")
             proximityTimer = Timer.scheduledTimer(withTimeInterval: proximityTimeout, repeats: false, block: { _ in
                 print("Device is away")
+                diagLog.info("lock timer elapsed -> presence false (away)")
                 self.presence = false
                 self.delegate?.updatePresence(presence: self.presence, reason: "away")
                 self.proximityTimer = nil
@@ -405,6 +419,7 @@ class BLE: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
         // cancel the lock timer. lastReadAt is not updated either, so active mode falls back to passive.
         guard error == nil, let rssi = validRSSI(RSSI.intValue) else {
             print("Ignoring invalid RSSI read")
+            invalidReads += 1
             return
         }
         //print("readRSSI \(rssi)dBm")
@@ -413,12 +428,14 @@ class BLE: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
 
         if activeModeTimer == nil && !passiveMode {
             print("Entering active mode")
+            diagLog.info("active mode (connected, reading RSSI every 2s)")
             if !scanMode {
                 centralMgr.stopScan()
             }
             activeModeTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true, block: { _ in
                 if Date().timeIntervalSince1970 > self.lastReadAt + 10 {
                     print("Falling back to passive mode")
+                    diagLog.info("no RSSI read for 10s -> falling back to passive scanning")
                     self.centralMgr.cancelPeripheralConnection(peripheral)
                     self.activeModeTimer?.invalidate()
                     self.activeModeTimer = nil

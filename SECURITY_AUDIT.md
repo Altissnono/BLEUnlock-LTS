@@ -254,3 +254,9 @@ For a local proximity‑unlock utility the implementation is **careful and small
 - **Robust filter** (median): off by default; reduces the effect of single outliers; slightly slower to follow brief true changes. Behaviour with real Watch/iPhone signals **not measured**.
 - **Lock on sleep / Bluetooth off** (off by default) can only *increase* locking. After a sleep lock `manualLock` blocks auto-unlock until a manual unlock or a device leave/return.
 - **Not implemented:** a second factor / confirmation gesture before auto-unlock. macOS gives no reliable way to prompt biometrics on the lock screen; a real second factor needs an iPhone companion app (out of scope). Notarisation remains pending on the owner's Developer ID certificate.
+
+---
+
+# Addendum — 3.2.2 diagnostics logging
+
+Key decisions are logged with `os.Logger` (category `presence`): signal numbers (rate-limited), timer start/cancel, presence events, lock result code. **Never** logged: device names/UUIDs/MACs, passwords, settings values beyond thresholds. Strings are marked `.public` deliberately (numbers/state only). This supersedes V‑11's "no logging in release builds": prints are still stripped, but these local diagnostics are always on. They stay in the local unified log (no network).

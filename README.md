@@ -256,6 +256,9 @@ Copyright © 2019-2022 Takeshi Sone. LTS modifications © 2026 Altissnono.
 
 ## What's new in LTS
 
+### 3.2.2
+- **Local diagnostics:** key presence/lock decisions (signal numbers, timers, lock result) are written to the macOS unified log (subsystem `io.github.altissnono.BLEUnlock`, view with `log show --predicate 'subsystem == "io.github.altissnono.BLEUnlock"' --info --last 10m`). No device names/identifiers, passwords or personal data; nothing leaves the Mac.
+
 ### 3.2.1
 - **Readable device lists** (*Device* and *Second Device*): iPhone / Apple Watch / iPad are listed first with icons, strongest signal on top; other named devices and anonymous ones (raw UUIDs) are folded into an *Other devices (N)* submenu. Apple model identifiers get readable names (e.g. `Watch7,5` → "Apple Watch (Watch7,5)"). Tip: hold your device next to the Mac — it jumps to the top. 49 unit tests.
 
