@@ -25,7 +25,7 @@ BLEUnlock, iPhone’unuzun, Apple Watch’unuzun veya herhangi bir Bluetooth Low
 - Parola (yalnızca kilit açma modunda) macOS Anahtar Zinciri’nde, yalnızca bu cihazda saklanır.
 - Üçüncü taraf bağımlılık yok, Hardened Runtime açık, güvenlik mantığı için birim testleri var.
 
-> Bu, uygulamanın teknik davranışının açıklamasıdır, hukuki bir sertifika değildir. Ayrıntılar: [PRIVACY.md](PRIVACY.md).
+> Bu, uygulamanın teknik davranışının açıklamasıdır, hukuki bir sertifika değildir. Ayrıntılar: [PRIVACY.md](PRIVACY.tr.md).
 
 ## Gereksinimler
 
@@ -56,7 +56,7 @@ BLEUnlock, iPhone’unuzun, Apple Watch’unuzun veya herhangi bir Bluetooth Low
 ## Daha fazlası
 
 - Tam belge (İngilizce): [README.md](README.md)
-- Gizlilik politikası: [PRIVACY.md](PRIVACY.md)
+- Gizlilik politikası: [PRIVACY.md](PRIVACY.tr.md)
 - Güvenlik denetimi: [SECURITY_AUDIT.md](SECURITY_AUDIT.md)
 
 ---

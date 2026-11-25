@@ -269,3 +269,26 @@ Evidence: local diagnostics log of an actual test (Apple Watch Series 10, active
 - **V‑15 — MEDIUM (reliability) — fixed.** With the lock threshold at −65 dBm, a lock timer was started at est −67 and cancelled 4 s later at est −64: any recovery above the threshold cancelled it, so a signal hovering at the threshold never locked. Fix: cancel only above threshold + 5 dB (`LockTimerPolicy`, unit-tested with the observed values).
 - **V‑16 — MEDIUM (security) — fixed.** The "device is close" decision (which leads to typing the password) used a **single raw reading** ≥ unlock threshold, while the log shows single-sample spikes of +20 dB. Right after a lock, one such spike could have unlocked the Mac. Fix: ≥ 2 of the last 3 raw readings (`CloseGate`, unit-tested). Cost: unlock is detected ~1 reading (1–2 s) later.
 - **Observation:** the log confirms that the lock mechanism itself works on macOS 27.2 (`SACLockScreenImmediate` returned 0). V‑01 (RSSI can be spoofed) is unchanged; a noisy signal also means a threshold must sit ≥ 10 dB away from both the "near" and "far" readings — the calibration assistant (*Proximity → Calibrate Signal…*) computes this; for this log it would suggest roughly lock −55 / unlock −50.
+
+---
+
+# Addendum — security re-check (3.2.5)
+
+Performed 2026-11-25: static checks, 54 unit tests, inspection of the signed binaries, git-history secret scan, review of the code added since the first audit, GitHub state.
+
+**New findings**
+- **V‑17 — MEDIUM — fixed in 3.2.5.** The signed app (and the nested Launcher) carried the entitlement `com.apple.security.get-task-allow`. It lets another process of the same user attach a debugger and read the app's memory, including the password at the moment it is typed, and Apple's notarisation would reject it. *Confirmed* by reproducing the CI configuration locally (ad-hoc Release build) and on the Xcode-signed install. The earlier static check only read the entitlements **file** (which is empty); Xcode injects this entitlement at signing time. Fix: `CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO` for Release in both targets, plus `scripts/verify-build.sh`, which inspects the **built, signed** app (and Launcher) and now runs in CI before every release. Verified before/after: the check fails on the old install and passes on the new builds. *Published releases ≤ 3.2.4 were built with the same configuration and very likely carry the entitlement; I did not download them to confirm.*
+- **V‑18 — LOW — open.** On start-up (and when a device is selected) a monitored device is assumed present until its first no-signal timeout (inherited upstream behaviour, now also applies to the second device). During that window a device that is not actually near can count as "attended". Mitigated by the short no-signal timeout (3 to 60 s) and by the lock-screen/console/front-window guards before any password is typed.
+- **V‑19 — INFO.** The diagnostics log contains the text "typing password (unlock)" (an event, not the password); no identifiers or names are logged (checked by grep).
+
+**Verified clean**
+- No non-system libraries linked; only `api.github.com` / `github.com` URLs in the binary; Hardened Runtime on; no URL schemes, no ATS exceptions; privacy manifest present and declares no tracking or collected data.
+- Git history (all branches, including upstream's): no key/certificate/provisioning files ever added and no secret patterns in added lines (the only regex hit was a comment in my own script). *This is a pattern scan, not a dedicated tool such as gitleaks.*
+- GitHub Actions: all pinned by commit SHA; workflows declare minimal permissions.
+
+**Not verifiable from here**
+- Branch protection / rulesets and the "require approval for outside collaborators" setting (the API needs authentication). Pull request #1 from `imgbot[bot]` is still open and should be closed, and the ImgBot GitHub App removed (third-party app with write access).
+- Notarisation: still pending the owner's Developer ID certificate; ad-hoc/Apple-Development signed builds are not notarised.
+- Real-world behaviour with Apple Watch/iPhone beyond the recorded tests (RSSI remains spoofable, V‑01).
+
+**Privacy policy:** `PRIVACY.md` was rewritten in full and translated into all 10 languages (`PRIVACY.<code>.md`); CI checks that all 10 exist with the same 16 sections, and the in-app *Privacy Policy* item opens the user's language. Statements about the app's behaviour were cross-checked with the code (network calls, stored keys, permissions, deletion paths).

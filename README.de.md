@@ -25,7 +25,7 @@ BLEUnlock ist ein kleines Menüleisten-Programm, das Ihren Mac je nach Nähe Ihr
 - Das Passwort (nur im Entsperr-Modus) liegt im macOS-Schlüsselbund, nur auf diesem Gerät.
 - Keine Drittanbieter-Abhängigkeiten, Hardened Runtime, Unit-Tests für die Sicherheitslogik.
 
-> Dies beschreibt das technische Verhalten der App, keine rechtliche Zertifizierung. Details: [PRIVACY.md](PRIVACY.md).
+> Dies beschreibt das technische Verhalten der App, keine rechtliche Zertifizierung. Details: [PRIVACY.md](PRIVACY.de.md).
 
 ## Voraussetzungen
 
@@ -56,7 +56,7 @@ Laden Sie das Zip von [Releases](https://github.com/Altissnono/BLEUnlock-LTS/rel
 ## Mehr
 
 - Vollständige Dokumentation (Englisch): [README.md](README.md)
-- Datenschutzerklärung: [PRIVACY.md](PRIVACY.md)
+- Datenschutzerklärung: [PRIVACY.md](PRIVACY.de.md)
 - Sicherheitsaudit: [SECURITY_AUDIT.md](SECURITY_AUDIT.md)
 
 ---

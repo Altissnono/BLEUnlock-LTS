@@ -79,6 +79,10 @@ jobs:
             CONFIGURATION_BUILD_DIR="$PWD/build" \
             CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= CODE_SIGN_STYLE=Manual build
 
+      - name: Verify the signed build (no debugger entitlement, hardened runtime)
+        if: steps.ver.outputs.publish == 'true'
+        run: ./scripts/verify-build.sh build/BLEUnlock.app
+
       - name: Package
         if: steps.ver.outputs.publish == 'true'
         run: |

@@ -258,6 +258,11 @@ Copyright © 2019-2022 Takeshi Sone. LTS modifications © 2026 Altissnono.
 
 ## What's new in LTS
 
+### 3.2.5
+- **Security fix:** the signed app no longer carries the debugger entitlement `get-task-allow` (it let another process of the same user attach to the app). New `scripts/verify-build.sh` checks the signed build in CI.
+- **Privacy policy rewritten in full** and translated into the 10 languages (`PRIVACY.<code>.md`); the in-app *Privacy Policy* item opens your language.
+- Security re-check documented in `SECURITY_AUDIT.md`.
+
 ### 3.2.4
 - **Shorter No-Signal Timeout**: new choices 3, 5, 10 and 15 seconds (was 30 s minimum). The Mac locks that many seconds after the last valid reading from your device. Recommended ≥ 5 s with an Apple Watch: a very short value can lock the Mac when one or two readings are missed. The device list keeps its own 30 s expiry.
 

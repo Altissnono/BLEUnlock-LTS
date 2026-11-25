@@ -25,7 +25,7 @@ BLEUnlock 是一个菜单栏小工具，可根据 iPhone、Apple Watch 或任何
 - 密码（仅解锁模式）保存在 macOS 钥匙串中，仅限此设备。
 - 没有第三方依赖，启用 Hardened Runtime，并对安全逻辑做了单元测试。
 
-> 以上描述的是应用的技术行为，不是法律认证。详情：[PRIVACY.md](PRIVACY.md)。
+> 以上描述的是应用的技术行为，不是法律认证。详情：[PRIVACY.md](PRIVACY.zh-Hans.md)。
 
 ## 系统要求
 
@@ -56,7 +56,7 @@ BLEUnlock 是一个菜单栏小工具，可根据 iPhone、Apple Watch 或任何
 ## 更多信息
 
 - 完整文档（英文）：[README.md](README.md)
-- 隐私政策：[PRIVACY.md](PRIVACY.md)
+- 隐私政策：[PRIVACY.md](PRIVACY.zh-Hans.md)
 - 安全审计：[SECURITY_AUDIT.md](SECURITY_AUDIT.md)
 
 ---

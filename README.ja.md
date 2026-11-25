@@ -43,7 +43,7 @@ BLEUnlockはiPhone, Apple Watchやその他のBluetooth Low Energyデバイス�
 - アップデートの確認は任意です（`api.github.com` への1回のHTTPSリクエスト。GitHubにIPアドレスが見えます）。
 - ワンクリックで削除: セキュリティ → すべてのデータを消去…。
 - パスワード（ロック解除モードのみ）はmacOSのキーチェーンに、このデバイスだけに保存されます。
-- サードパーティ依存なし、Hardened Runtime、セキュリティロジックの単体テストあり。詳細は [PRIVACY.md](PRIVACY.md) をご覧ください（技術的な説明であり、法的な認証ではありません）。
+- サードパーティ依存なし、Hardened Runtime、セキュリティロジックの単体テストあり。詳細は [PRIVACY.md](PRIVACY.ja.md) をご覧ください（技術的な説明であり、法的な認証ではありません）。
 
 > アプリは公証されていません。初回起動時は右クリックして**開く**を選んでください（または `xattr -dr com.apple.quarantine /Applications/BLEUnlock.app`）。zipは `SHA256SUMS.txt` か、`gh attestation verify BLEUnlock-<version>.zip --repo Altissnono/BLEUnlock-LTS` で確認できます。
 

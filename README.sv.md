@@ -25,7 +25,7 @@ BLEUnlock är ett litet verktyg i menyraden som låser och låser upp din Mac ut
 - Lösenordet (endast i upplåsningsläge) sparas i macOS Nyckelring, endast på den här enheten.
 - Inga beroenden från tredje part, Hardened Runtime och enhetstester för säkerhetslogiken.
 
-> Detta beskriver appens tekniska beteende, inte en juridisk certifiering. Detaljer: [PRIVACY.md](PRIVACY.md).
+> Detta beskriver appens tekniska beteende, inte en juridisk certifiering. Detaljer: [PRIVACY.md](PRIVACY.sv.md).
 
 ## Krav
 
@@ -56,7 +56,7 @@ Ladda ner zip-filen från [Releases](https://github.com/Altissnono/BLEUnlock-LTS
 ## Mer information
 
 - Fullständig dokumentation (engelska): [README.md](README.md)
-- Integritetspolicy: [PRIVACY.md](PRIVACY.md)
+- Integritetspolicy: [PRIVACY.md](PRIVACY.sv.md)
 - Säkerhetsgranskning: [SECURITY_AUDIT.md](SECURITY_AUDIT.md)
 
 ---

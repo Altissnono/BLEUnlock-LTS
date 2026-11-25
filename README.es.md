@@ -25,7 +25,7 @@ BLEUnlock es una pequeña utilidad de la barra de menús que bloquea y desbloque
 - La contraseña (solo en modo desbloqueo) se guarda en el Llavero de macOS, solo en este dispositivo.
 - Sin dependencias de terceros, Hardened Runtime y pruebas unitarias de la lógica de seguridad.
 
-> Esto describe el comportamiento técnico de la app, no una certificación legal. Detalles: [PRIVACY.md](PRIVACY.md).
+> Esto describe el comportamiento técnico de la app, no una certificación legal. Detalles: [PRIVACY.md](PRIVACY.es.md).
 
 ## Requisitos
 
@@ -56,7 +56,7 @@ Descarga el zip desde [Releases](https://github.com/Altissnono/BLEUnlock-LTS/rel
 ## Más información
 
 - Documentación completa (inglés): [README.md](README.md)
-- Política de privacidad: [PRIVACY.md](PRIVACY.md)
+- Política de privacidad: [PRIVACY.md](PRIVACY.es.md)
 - Auditoría de seguridad: [SECURITY_AUDIT.md](SECURITY_AUDIT.md)
 
 ---

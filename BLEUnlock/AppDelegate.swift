@@ -981,7 +981,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     }
 
     @objc func openPrivacy() {
-        NSWorkspace.shared.open(URL(string: "https://github.com/\(repoSlug)/blob/master/PRIVACY.md")!)
+        // The policy exists in the app's 10 languages (PRIVACY.<code>.md); English is PRIVACY.md.
+        let supported = ["fr", "es", "de", "ja", "zh-Hans", "tr", "sv", "da", "nb"]
+        let lang = Bundle.main.preferredLocalizations.first ?? "en"
+        let file = supported.contains(lang) ? "PRIVACY.\(lang).md" : "PRIVACY.md"
+        NSWorkspace.shared.open(URL(string: "https://github.com/\(repoSlug)/blob/master/\(file)")!)
     }
 
     /// GDPR right to erasure: removes the Keychain password, all settings and the login item, then quits.

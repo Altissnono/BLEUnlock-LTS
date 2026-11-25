@@ -25,7 +25,7 @@ BLEUnlock est un petit utilitaire de barre des menus qui verrouille et déverrou
 - Le mot de passe (mode déverrouillage seulement) est stocké dans le Trousseau macOS, sur cet appareil uniquement.
 - Aucune dépendance tierce, Hardened Runtime, tests unitaires sur la logique de sécurité.
 
-> Ceci décrit le comportement technique de l'app, pas une certification juridique. Détails : [PRIVACY.md](PRIVACY.md).
+> Ceci décrit le comportement technique de l'app, pas une certification juridique. Détails : [PRIVACY.md](PRIVACY.fr.md).
 
 ## Prérequis
 
@@ -56,7 +56,7 @@ Téléchargez le zip depuis les [Releases](https://github.com/Altissnono/BLEUnlo
 ## Pour aller plus loin
 
 - Documentation complète (anglais) : [README.md](README.md)
-- Politique de confidentialité : [PRIVACY.md](PRIVACY.md)
+- Politique de confidentialité : [PRIVACY.md](PRIVACY.fr.md)
 - Audit de sécurité : [SECURITY_AUDIT.md](SECURITY_AUDIT.md)
 
 ---

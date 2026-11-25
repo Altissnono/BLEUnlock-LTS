@@ -27,4 +27,6 @@ check "redirects refused for update check" "grep -q 'completionHandler(nil)' BLE
 check "erase-all-data feature present" "grep -q 'eraseAllData' BLEUnlock/AppDelegate.swift || echo missing"
 check "privacy manifest declares no tracking/collection" "grep -A1 'NSPrivacyTracking<' BLEUnlock/PrivacyInfo.xcprivacy | grep -q false || echo missing"
 check "no legacy upstream bundle id" "grep -rn 'jp\\.sone' BLEUnlock.xcodeproj BLEUnlock Launcher scripts | head"
+check "privacy policy exists in all 10 languages with all 16 sections" "for l in '' .fr .es .de .ja .zh-Hans .tr .sv .da .nb; do f=PRIVACY\$l.md; [ -f \$f ] || { echo missing \$f; continue; }; [ \$(grep -c '^## [0-9]*\\. ' \$f) -eq 16 ] || echo \$f has wrong section count; done"
+check "app privacy-policy links point to existing files" "for l in fr es de ja zh-Hans tr sv da nb; do [ -f PRIVACY.\$l.md ] || echo missing PRIVACY.\$l.md; done"
 exit $fail
