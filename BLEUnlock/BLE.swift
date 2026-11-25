@@ -315,7 +315,7 @@ class BLE: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
 
     func resetScanTimer(device: Device) {
         device.scanTimer?.invalidate()
-        device.scanTimer = Timer.scheduledTimer(withTimeInterval: signalTimeout, repeats: false, block: { _ in
+        device.scanTimer = Timer.scheduledTimer(withTimeInterval: max(signalTimeout, 30), repeats: false, block: { _ in
             self.delegate?.removeDevice(device: device)
             if let p = device.peripheral {
                 self.centralMgr.cancelPeripheralConnection(p)

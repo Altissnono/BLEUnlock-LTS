@@ -120,7 +120,7 @@ final class ClampTests: XCTestCase {
         XCTAssertEqual(Clamp.rssi(Int.max), -1); XCTAssertEqual(Clamp.rssi(Int.min), -100)
     }
     func testTimeoutsAndDelays() {
-        XCTAssertEqual(Clamp.signalTimeout(0), 30); XCTAssertEqual(Clamp.signalTimeout(999_999), 600)
+        XCTAssertEqual(Clamp.signalTimeout(0), 3); XCTAssertEqual(Clamp.signalTimeout(-50), 3); XCTAssertEqual(Clamp.signalTimeout(5), 5); XCTAssertEqual(Clamp.signalTimeout(999_999), 600)
         XCTAssertEqual(Clamp.lockDelay(-5), 2); XCTAssertEqual(Clamp.lockDelay(10_000), 300)
         XCTAssertEqual(Clamp.confirmDelay(-1), 0); XCTAssertEqual(Clamp.confirmDelay(99), 10)
     }

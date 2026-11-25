@@ -256,6 +256,9 @@ Copyright © 2019-2022 Takeshi Sone. LTS modifications © 2026 Altissnono.
 
 ## What's new in LTS
 
+### 3.2.4
+- **Shorter No-Signal Timeout**: new choices 3, 5, 10 and 15 seconds (was 30 s minimum). The Mac locks that many seconds after the last valid reading from your device. Recommended ≥ 5 s with an Apple Watch: a very short value can lock the Mac when one or two readings are missed. The device list keeps its own 30 s expiry.
+
 ### 3.2.3
 - **Apple Watch reliability** (found from a real diagnostics log: a Watch's raw RSSI jumps by 25–30 dB between two readings):
   - A pending lock is now cancelled only when the signal recovers **5 dB above** the lock threshold (before, a signal hovering at the threshold kept cancelling the lock, so the Mac never locked).

@@ -1140,7 +1140,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
 
         let timeoutItem = add(proximityMenu, t("timeout"), nil, symbol: "wifi.slash")
         timeoutItem.submenu = timeoutMenu
-        for (n, unit, sec) in [(30, "seconds", 30), (1, "minute", 60), (2, "minutes", 120), (5, "minutes", 300), (10, "minutes", 600)] {
+        for (n, unit, sec) in [(3, "seconds", 3), (5, "seconds", 5), (10, "seconds", 10), (15, "seconds", 15), (30, "seconds", 30), (1, "minute", 60), (2, "minutes", 120), (5, "minutes", 300), (10, "minutes", 600)] {
             add(timeoutMenu, "\(n) " + t(unit), #selector(setTimeout), tag: sec)
         }
         timeoutMenu.delegate = self
@@ -1242,7 +1242,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         applyMode()
         let timeout = prefs.integer(forKey: "timeout")
         if timeout != 0 {
-            ble.signalTimeout = Double(max(30, min(600, timeout)))
+            ble.signalTimeout = Clamp.signalTimeout(timeout)
         }
         ble.setPassiveMode(prefs.bool(forKey: "passiveMode"))
         ble.robustFilter = prefs.bool(forKey: "robustFilter")
