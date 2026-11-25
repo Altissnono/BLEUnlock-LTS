@@ -1,6 +1,6 @@
 # BLEUnlock
 
-## 🇪🇺 BLEUnlock LTS — privacy‑first, EU‑friendly proximity lock for macOS
+## 🇪🇺 BLEUnlock LTS: privacy-first, EU-friendly proximity lock for macOS
 
 *Not on the Mac App Store. Free and open source (MIT).*
 
@@ -26,7 +26,7 @@ This document is also available in [Japanese (日本語版はこちら)](README.
 - Optionally wakes from display sleep
 - Optionally pauses and unpauses music/video playback when you're away and back
 - Password is securely stored in Keychain
-- **Two modes**: *Lock & Unlock*, or *Lock only* — in lock-only mode no password is ever asked for or stored, and no Accessibility permission is needed
+- **Two modes**: *Lock & Unlock*, or *Lock only*: in lock-only mode no password is ever asked for or stored, and no Accessibility permission is needed
 - Menu organised in *Device / Mode / Proximity / Security / Options* with SF Symbols
 - Languages: English, Français, Español, Deutsch, 日本語, 简体中文, Türkçe, Svenska, Dansk, Norsk
 
@@ -237,21 +237,21 @@ Copyright © 2019-2022 Takeshi Sone. LTS modifications © 2026 Altissnono.
 
 > This is a technical description of how the app behaves, not a legal certification.
 
-- **Local‑only by design** — no account, no analytics, no ads, no crash reporting, no server run by the maintainer. Nothing about you is collected ([Privacy Policy / Politique de confidentialité](PRIVACY.md), EN + FR).
-- **Data minimisation** — new **Lock only** mode never asks for or stores a password and needs no Accessibility permission.
-- **Consent by default off** — the only network feature (update check, one HTTPS call to `api.github.com`) is **opt‑in**, refuses redirects, uses no cookies/cache and sends nothing but your IP address (as any web request does). CI fails if any other host appears in the code.
-- **Right to erasure built in** — *Security → Erase All Data…* wipes the Keychain password, settings and login item in one click.
+- **Local-only by design**: no account, no analytics, no ads, no crash reporting, no server run by the maintainer. Nothing about you is collected ([Privacy Policy / Politique de confidentialité](PRIVACY.md), EN + FR).
+- **Data minimisation**: new **Lock only** mode never asks for or stores a password and needs no Accessibility permission.
+- **Consent by default off**: the only network feature (update check, one HTTPS call to `api.github.com`) is **opt-in**, refuses redirects, uses no cookies/cache and sends nothing but your IP address (as any web request does). CI fails if any other host appears in the code.
+- **Right to erasure built in**: *Security → Erase All Data…* wipes the Keychain password, settings and login item in one click.
 - **Privacy manifest** (`PrivacyInfo.xcprivacy`): no tracking, no collected data types.
-- **EU languages** — English, Français, Español, Deutsch, Svenska, Dansk, Norsk (+ 日本語, 简体中文, Türkçe).
-- **Independent identity** — bundle id `io.github.altissnono.BLEUnlock` (no upstream/third‑country identifiers).
-- **Honest limits** — releases are hosted on GitHub (United States); downloading or checking for updates exposes your IP to GitHub. Build from source if you want zero contact. The app itself contacts no server in Asia or anywhere else.
+- **EU languages**: English, Français, Español, Deutsch, Svenska, Dansk, Norsk (+ 日本語, 简体中文, Türkçe).
+- **Independent identity**: bundle id `io.github.altissnono.BLEUnlock` (no upstream/third-country identifiers).
+- **Honest limits**: releases are hosted on GitHub (United States); downloading or checking for updates exposes your IP to GitHub. Build from source if you want zero contact. The app itself contacts no server in Asia or anywhere else.
 
 | | |
 |---|---|
-| Third‑party code | **0** dependencies |
-| Network hosts contacted | `api.github.com` only, opt‑in |
+| Third-party code | **0** dependencies |
+| Network hosts contacted | `api.github.com` only, opt-in |
 | Data sent | IP address only (inherent to HTTPS) |
-| Data stored | Keychain password (unlock mode), settings, chosen device UUID — all local |
+| Data stored | Keychain password (unlock mode), settings, chosen device UUID (all local) |
 | Telemetry / tracking | none |
 
 ## What's new in LTS
@@ -260,7 +260,7 @@ Copyright © 2019-2022 Takeshi Sone. LTS modifications © 2026 Altissnono.
 - **Shorter No-Signal Timeout**: new choices 3, 5, 10 and 15 seconds (was 30 s minimum). The Mac locks that many seconds after the last valid reading from your device. Recommended ≥ 5 s with an Apple Watch: a very short value can lock the Mac when one or two readings are missed. The device list keeps its own 30 s expiry.
 
 ### 3.2.3
-- **Apple Watch reliability** (found from a real diagnostics log: a Watch's raw RSSI jumps by 25–30 dB between two readings):
+- **Apple Watch reliability** (found from a real diagnostics log: a Watch's raw RSSI jumps by 25 to 30 dB between two readings):
   - A pending lock is now cancelled only when the signal recovers **5 dB above** the lock threshold (before, a signal hovering at the threshold kept cancelling the lock, so the Mac never locked).
   - "Device is close" (→ unlock) now needs **at least 2 of the last 3** readings above the unlock threshold, so a single spike can no longer unlock the Mac.
   - Unlock decisions are logged (which guard blocked, or "typing password"). 54 unit tests.
@@ -269,7 +269,7 @@ Copyright © 2019-2022 Takeshi Sone. LTS modifications © 2026 Altissnono.
 - **Local diagnostics:** key presence/lock decisions (signal numbers, timers, lock result) are written to the macOS unified log (subsystem `io.github.altissnono.BLEUnlock`, view with `log show --predicate 'subsystem == "io.github.altissnono.BLEUnlock"' --info --last 10m`). No device names/identifiers, passwords or personal data; nothing leaves the Mac.
 
 ### 3.2.1
-- **Readable device lists** (*Device* and *Second Device*): iPhone / Apple Watch / iPad are listed first with icons, strongest signal on top; other named devices and anonymous ones (raw UUIDs) are folded into an *Other devices (N)* submenu. Apple model identifiers get readable names (e.g. `Watch7,5` → "Apple Watch (Watch7,5)"). Tip: hold your device next to the Mac — it jumps to the top. 49 unit tests.
+- **Readable device lists** (*Device* and *Second Device*): iPhone / Apple Watch / iPad are listed first with icons, strongest signal on top; other named devices and anonymous ones (raw UUIDs) are folded into an *Other devices (N)* submenu. Apple model identifiers get readable names (e.g. `Watch7,5` → "Apple Watch (Watch7,5)"). Tip: hold your device next to the Mac and it jumps to the top. 49 unit tests.
 
 ### 3.2.0
 - **Signal calibration assistant** (*Proximity → Calibrate Signal…*): measures the signal where you sit and where the Mac should lock (12 s each) and suggests the lock/unlock thresholds.
@@ -286,14 +286,14 @@ Copyright © 2019-2022 Takeshi Sone. LTS modifications © 2026 Altissnono.
 - Release process: `scripts/release.sh X.Y.Z` bumps the version, runs the tests, tags and pushes; GitHub Actions then builds, attests and publishes (publishing on a plain push to `master` was removed: the workflow token cannot create tags on commits that modify workflow files).
 - **Tests:** 33 unit tests for the security-critical logic (`swift test`, run in CI) + extended static checks.
 - **Window check before typing:** the password is typed only if the lock screen is really in front (option *Security → Verify Lock Screen Before Typing*, on by default).
-- **Release provenance:** releases carry a Sigstore build-provenance attestation — `gh attestation verify BLEUnlock-<version>.zip --repo Altissnono/BLEUnlock-LTS`. GitHub Actions pinned by commit SHA; `CODEOWNERS`.
+- **Release provenance:** releases carry a Sigstore build-provenance attestation, verify it with `gh attestation verify BLEUnlock-<version>.zip --repo Altissnono/BLEUnlock-LTS`. GitHub Actions pinned by commit SHA; `CODEOWNERS`.
 
-### 3.0.0 — 🇪🇺 privacy release
-- **Breaking:** new bundle identifier `io.github.altissnono.BLEUnlock` (replaces the upstream `jp.sone.*`). Settings, Keychain password, login item and the `event` script folder (`~/Library/Application Scripts/io.github.altissnono.BLEUnlock/`) start fresh — re‑select your device and re‑enter the password once.
-- Update checks are now **opt‑in** (consent prompt), hardened (ephemeral session, no redirects, size/host checks), plus *Automatic Update Checks* toggle.
+### 3.0.0: 🇪🇺 privacy release
+- **Breaking:** new bundle identifier `io.github.altissnono.BLEUnlock` (replaces the upstream `jp.sone.*`). Settings, Keychain password, login item and the `event` script folder (`~/Library/Application Scripts/io.github.altissnono.BLEUnlock/`) start fresh, so re-select your device and re-enter the password once.
+- Update checks are now **opt-in** (consent prompt), hardened (ephemeral session, no redirects, size/host checks), plus *Automatic Update Checks* toggle.
 - **Erase All Data…**, **Privacy Policy** menu item, `PRIVACY.md` (EN/FR), privacy manifest.
 - Signing/notarisation: `scripts/notarize-release.sh` and CI support for Developer ID + notarisation when repository secrets are set.
-- CI checks extended (single allowed host, no tracking SDKs, opt‑in network, erase feature, privacy manifest).
+- CI checks extended (single allowed host, no tracking SDKs, opt-in network, erase feature, privacy manifest).
 
 ### 2.0.1
 - Update check reworked: the *Check for Updates* item now always answers with a dialog (update available / up to date / failed) and a *Download* button; an automatic check also adds an "Update Available" item to the menu. It no longer depends on notification permission.
@@ -319,7 +319,7 @@ Copyright © 2019-2022 Takeshi Sone. LTS modifications © 2026 Altissnono.
 ### 1.14.0
 **Security**
 - Auto-unlock lockout after N failed attempts (default 3 in 2 min) until you unlock manually.
-- Unlock confirmation delay (0–10 s): the device must still be near before the password is typed.
+- Unlock confirmation delay (0 to 10 s): the device must still be near before the password is typed.
 - Optional `event` script only runs if owned by you and not group/world-writable.
 - Password buffer wiped and freed after typing; Keychain item is `ThisDeviceOnly`; no force-unwraps.
 - Removed the unused Apple Events entitlement; update check validates the release tag.
