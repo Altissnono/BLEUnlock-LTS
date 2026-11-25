@@ -256,6 +256,14 @@ Copyright © 2019-2022 Takeshi Sone. LTS modifications © 2026 Altissnono.
 
 ## What's new in LTS
 
+### 3.2.0
+- **Signal calibration assistant** (*Proximity → Calibrate Signal…*): measures the signal where you sit and where the Mac should lock (12 s each) and suggests the lock/unlock thresholds.
+- **Second device** (*Second Device*): monitor an Apple Watch **and** an iPhone. The Mac unlocks when *either* is near and locks only when *both* are away.
+- **Robust Signal Filter** (median instead of mean, off by default) to ignore isolated signal spikes/dropouts.
+- **Lock When Mac Sleeps or Lid Closes** and **Lock When Bluetooth Turns Off** (both off by default). After a sleep lock the Mac is not auto-unlocked until you unlock it or the device leaves and returns.
+- 44 unit tests (calibration, median filter, presence combination, …); all new texts translated in the 10 languages.
+- Xcode project: automatic signing with the maintainer's team for local builds (CI still builds ad-hoc).
+
 ### 3.1.1
 - **Reliability/security fix:** failed or unavailable Bluetooth signal readings (RSSI 127/0, read errors) were treated as "device is very close", which could keep the Mac unlocked or delay locking after the device left. They are now ignored, so the "No-Signal Timeout" locks the Mac as intended. Covered by unit tests (35 total).
 

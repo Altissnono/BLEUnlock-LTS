@@ -156,6 +156,70 @@ final class ValidRSSITests: XCTestCase {
     }
 }
 
+final class MedianFilterTests: XCTestCase {
+    func testMedianRejectsSingleSpike() {
+        var a = RSSIAverager(size: 5); a.useMedian = true
+        _ = a.add(-60); _ = a.add(-61); _ = a.add(-59); _ = a.add(-60)
+        XCTAssertEqual(a.add(-100), -60)          // one dropout does not move the estimate
+        var m = RSSIAverager(size: 5)             // legacy mean is dragged down
+        _ = m.add(-60); _ = m.add(-61); _ = m.add(-59); _ = m.add(-60)
+        XCTAssertEqual(m.add(-100), -68)
+    }
+    func testMedianEvenCountAndFollowsPersistentChange() {
+        var a = RSSIAverager(size: 5); a.useMedian = true
+        XCTAssertEqual(a.add(-60), -60)
+        XCTAssertEqual(a.add(-70), -65)
+        for _ in 0..<3 { _ = a.add(-90) }
+        XCTAssertEqual(a.add(-90), -90)           // persistent change is followed
+    }
+}
+
+final class CalibrationTests: XCTestCase {
+    func testTypicalSeparation() throws {
+        let near = [-45, -48, -50, -46, -52, -47, -49, -51]
+        let far  = [-82, -85, -80, -88, -84, -86, -83, -90]
+        let r = try Calibration.propose(near: near, far: far, throwing: ())
+        XCTAssertGreaterThanOrEqual(r.unlockRSSI, r.lockRSSI + 5)         // hysteresis
+        XCTAssertLessThanOrEqual(r.unlockRSSI, -45)                        // sitting position unlocks
+        XCTAssertGreaterThan(r.lockRSSI, -82)                              // far position is below lock threshold
+        XCTAssertEqual(r.unlockRSSI % 5, 0); XCTAssertEqual(r.lockRSSI % 5, 0)
+    }
+    func testNotEnoughSamples() {
+        XCTAssertThrowsError(try Calibration.propose(near: [-50, -51], far: [-80, -81, -82, -83], throwing: ())) {
+            XCTAssertEqual($0 as? Calibration.Failure, .notEnoughSamples)
+        }
+    }
+    func testInvalidReadingsAreDiscarded() {
+        // 127/0 readings must not count as samples
+        XCTAssertThrowsError(try Calibration.propose(near: [127, 0, 127, 0, -50], far: [-80, -81, -82, -83], throwing: ()))
+    }
+    func testTooSimilar() {
+        let a = [-60, -61, -62, -63, -60, -61]
+        XCTAssertThrowsError(try Calibration.propose(near: a, far: a, throwing: ())) {
+            XCTAssertEqual($0 as? Calibration.Failure, .tooSimilar)
+        }
+    }
+    func testResultsStayInMenuRange() throws {
+        let r = try Calibration.propose(near: [-31, -32, -33, -34, -30], far: [-90, -92, -95, -96, -99], throwing: ())
+        XCTAssertTrue((-95 ... -30).contains(r.unlockRSSI)); XCTAssertTrue((-95 ... -35).contains(r.lockRSSI))
+        XCTAssertGreaterThanOrEqual(r.unlockRSSI, r.lockRSSI + 5)
+    }
+}
+
+final class PresenceCombinerTests: XCTestCase {
+    func testAnyPresent() {
+        XCTAssertTrue(PresenceCombiner.anyPresent([true, false]))
+        XCTAssertTrue(PresenceCombiner.anyPresent([false, true]))
+        XCTAssertFalse(PresenceCombiner.anyPresent([false, false]))
+    }
+    func testUnconfiguredDevicesIgnored() {
+        XCTAssertTrue(PresenceCombiner.anyPresent([true, nil]))
+        XCTAssertFalse(PresenceCombiner.anyPresent([false, nil]))
+        XCTAssertFalse(PresenceCombiner.anyPresent([nil, nil]))   // nothing configured → never "attended"
+        XCTAssertFalse(PresenceCombiner.anyPresent([]))
+    }
+}
+
 final class ScriptGuardTests: XCTestCase {
     private var dir: URL!
     override func setUpWithError() throws {

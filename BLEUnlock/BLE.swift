@@ -112,6 +112,7 @@ protocol BLEDelegate {
     func updateRSSI(rssi: Int?, active: Bool)
     func updatePresence(presence: Bool, reason: String)
     func bluetoothPowerWarn()
+    func bluetoothStateChanged(on: Bool)
 }
 
 class BLE: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
@@ -126,14 +127,19 @@ class BLE: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
     var proximityTimer : Timer?
     var signalTimer: Timer?
     var presence = false
-    var lockRSSI = -80
-    var unlockRSSI = -60
-    var proximityTimeout = 5.0
-    var signalTimeout = 60.0
+    /// A second BLE instance (second monitored device) that always mirrors this instance's settings.
+    weak var follower: BLE?
+    /// Called with every valid raw RSSI sample of the monitored device (used by the calibration assistant).
+    var onRawRSSI: ((Int) -> Void)?
+    var lockRSSI = -80 { didSet { follower?.lockRSSI = lockRSSI } }
+    var unlockRSSI = -60 { didSet { follower?.unlockRSSI = unlockRSSI } }
+    var proximityTimeout = 5.0 { didSet { follower?.proximityTimeout = proximityTimeout } }
+    var signalTimeout = 60.0 { didSet { follower?.signalTimeout = signalTimeout } }
+    var robustFilter = false { didSet { averager.useMedian = robustFilter; follower?.robustFilter = robustFilter } }
     var lastReadAt = 0.0
     var powerWarn = true
     var passiveMode = false
-    var thresholdRSSI = -70
+    var thresholdRSSI = -70 { didSet { follower?.thresholdRSSI = thresholdRSSI } }
     var averager = RSSIAverager(size: 5)
     var activeModeTimer : Timer? = nil
     var connectionTimer : Timer? = nil
@@ -156,7 +162,32 @@ class BLE: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
         }
     }
 
+    /// Copies the current settings to `other` and keeps it in sync from now on.
+    func link(_ other: BLE) {
+        follower = other
+        other.lockRSSI = lockRSSI; other.unlockRSSI = unlockRSSI
+        other.proximityTimeout = proximityTimeout; other.signalTimeout = signalTimeout
+        other.thresholdRSSI = thresholdRSSI; other.robustFilter = robustFilter
+        other.setPassiveMode(passiveMode)
+    }
+
+    /// Stops everything (used when the second device is removed): timers, scan, connection.
+    func shutdown() {
+        follower = nil
+        delegate = nil
+        proximityTimer?.invalidate(); proximityTimer = nil
+        signalTimer?.invalidate(); signalTimer = nil
+        activeModeTimer?.invalidate(); activeModeTimer = nil
+        connectionTimer?.invalidate(); connectionTimer = nil
+        if let p = monitoredPeripheral { centralMgr.cancelPeripheralConnection(p) }
+        monitoredPeripheral = nil
+        monitoredUUID = nil
+        presence = false
+        if centralMgr.isScanning { centralMgr.stopScan() }
+    }
+
     func setPassiveMode(_ mode: Bool) {
+        follower?.setPassiveMode(mode)
         passiveMode = mode
         if passiveMode {
             activeModeTimer?.invalidate()
@@ -200,6 +231,7 @@ class BLE: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         switch central.state {
         case .poweredOn:
+            delegate?.bluetoothStateChanged(on: true)
             print("Bluetooth powered on")
             if activeModeTimer == nil {
                 scanForPeripherals()
@@ -207,6 +239,7 @@ class BLE: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
             powerWarn = false
         case .poweredOff:
             print("Bluetooth powered off")
+            delegate?.bluetoothStateChanged(on: false)
             presence = false
             signalTimer?.invalidate()
             signalTimer = nil
@@ -224,6 +257,7 @@ class BLE: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
     }
 
     func updateMonitoredPeripheral(_ rssi: Int) {
+        onRawRSSI?(rssi)
         // print(String(format: "rssi: %d", rssi))
         if rssi >= (unlockRSSI == UNLOCK_DISABLED ? lockRSSI : unlockRSSI) && !presence {
             print("Device is close")

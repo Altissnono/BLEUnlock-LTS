@@ -25,14 +25,16 @@
 		3DD4B666226C1DF200451B7B /* BLE.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DD4B665226C1DF200451B7B /* BLE.swift */; };
 		3DD4B669226C1E3700451B7B /* login.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3DD4B668226C1E3700451B7B /* login.framework */; };
 		A1B2C3D4E5F600000000F002 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F600000000F001 /* PrivacyInfo.xcprivacy */; };
-		C0DE00000000000000000101 /* Sanitize.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000100 /* Sanitize.swift */; };
-		C0DE00000000000000000103 /* Versioning.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000102 /* Versioning.swift */; };
-		C0DE00000000000000000105 /* UnlockLimiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000104 /* UnlockLimiter.swift */; };
-		C0DE00000000000000000107 /* UnlockPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000106 /* UnlockPolicy.swift */; };
-		C0DE00000000000000000109 /* Clamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000108 /* Clamp.swift */; };
-		C0DE0000000000000000010B /* ScriptGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE0000000000000000010A /* ScriptGuard.swift */; };
-		C0DE0000000000000000010D /* RSSIAverager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE0000000000000000010C /* RSSIAverager.swift */; };
-		C0DE0000000000000000010F /* PasswordStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE0000000000000000010E /* PasswordStore.swift */; };
+		C0DE00000000000000000101 /* Core/Sanitize.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000100 /* Core/Sanitize.swift */; };
+		C0DE00000000000000000103 /* Core/Versioning.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000102 /* Core/Versioning.swift */; };
+		C0DE00000000000000000105 /* Core/UnlockLimiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000104 /* Core/UnlockLimiter.swift */; };
+		C0DE00000000000000000107 /* Core/UnlockPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000106 /* Core/UnlockPolicy.swift */; };
+		C0DE00000000000000000109 /* Core/Clamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000108 /* Core/Clamp.swift */; };
+		C0DE0000000000000000010B /* Core/ScriptGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE0000000000000000010A /* Core/ScriptGuard.swift */; };
+		C0DE0000000000000000010D /* Core/RSSIAverager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE0000000000000000010C /* Core/RSSIAverager.swift */; };
+		C0DE0000000000000000010F /* Core/PasswordStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE0000000000000000010E /* Core/PasswordStore.swift */; };
+		C0DE00000000000000000201 /* Calibration.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000200 /* Calibration.swift */; };
+		C0DE00000000000000000203 /* PresenceCombiner.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000202 /* PresenceCombiner.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -84,23 +86,25 @@
 		3DD4B663226C1CF000451B7B /* lowlevel.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = lowlevel.c; sourceTree = "<group>"; };
 		3DD4B665226C1DF200451B7B /* BLE.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLE.swift; sourceTree = "<group>"; };
 		3DD4B668226C1E3700451B7B /* login.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = login.framework; path = ../../../../System/Library/PrivateFrameworks/login.framework; sourceTree = "<group>"; };
-		B1EFF91422E010F50010DB0A /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/AboutBox.strings"; sourceTree = "<group>"; };
-		B1EFF91622E010F50010DB0A /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
-		F749D28C277515C600C78C28 /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/AboutBox.strings; sourceTree = "<group>"; };
-		F749D28D277515C600C78C28 /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/Localizable.strings; sourceTree = "<group>"; };
 		A1B2C3D4E5F6000000000002 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/AboutBox.strings; sourceTree = "<group>"; };
 		A1B2C3D4E5F6000000000003 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
 		A1B2C3D4E5F6000000000004 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/AboutBox.strings; sourceTree = "<group>"; };
 		A1B2C3D4E5F6000000000005 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
 		A1B2C3D4E5F600000000F001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		C0DE00000000000000000100 /* Sanitize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Sanitize.swift; sourceTree = "<group>"; };
-		C0DE00000000000000000102 /* Versioning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Versioning.swift; sourceTree = "<group>"; };
-		C0DE00000000000000000104 /* UnlockLimiter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/UnlockLimiter.swift; sourceTree = "<group>"; };
-		C0DE00000000000000000106 /* UnlockPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/UnlockPolicy.swift; sourceTree = "<group>"; };
-		C0DE00000000000000000108 /* Clamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Clamp.swift; sourceTree = "<group>"; };
-		C0DE0000000000000000010A /* ScriptGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ScriptGuard.swift; sourceTree = "<group>"; };
-		C0DE0000000000000000010C /* RSSIAverager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/RSSIAverager.swift; sourceTree = "<group>"; };
-		C0DE0000000000000000010E /* PasswordStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/PasswordStore.swift; sourceTree = "<group>"; };
+		B1EFF91422E010F50010DB0A /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/AboutBox.strings"; sourceTree = "<group>"; };
+		B1EFF91622E010F50010DB0A /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		C0DE00000000000000000100 /* Core/Sanitize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Sanitize.swift; sourceTree = "<group>"; };
+		C0DE00000000000000000102 /* Core/Versioning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Versioning.swift; sourceTree = "<group>"; };
+		C0DE00000000000000000104 /* Core/UnlockLimiter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/UnlockLimiter.swift; sourceTree = "<group>"; };
+		C0DE00000000000000000106 /* Core/UnlockPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/UnlockPolicy.swift; sourceTree = "<group>"; };
+		C0DE00000000000000000108 /* Core/Clamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Clamp.swift; sourceTree = "<group>"; };
+		C0DE0000000000000000010A /* Core/ScriptGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ScriptGuard.swift; sourceTree = "<group>"; };
+		C0DE0000000000000000010C /* Core/RSSIAverager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/RSSIAverager.swift; sourceTree = "<group>"; };
+		C0DE0000000000000000010E /* Core/PasswordStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/PasswordStore.swift; sourceTree = "<group>"; };
+		F749D28C277515C600C78C28 /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/AboutBox.strings; sourceTree = "<group>"; };
+		F749D28D277515C600C78C28 /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/Localizable.strings; sourceTree = "<group>"; };
+		C0DE00000000000000000200 /* Calibration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Calibration.swift; sourceTree = "<group>"; };
+		C0DE00000000000000000202 /* PresenceCombiner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/PresenceCombiner.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -160,14 +164,16 @@
 			isa = PBXGroup;
 			children = (
 				3D95379322784D550017D8B9 /* AboutBox.swift */,
-				C0DE00000000000000000100 /* Sanitize.swift */,
-				C0DE00000000000000000102 /* Versioning.swift */,
-				C0DE00000000000000000104 /* UnlockLimiter.swift */,
-				C0DE00000000000000000106 /* UnlockPolicy.swift */,
-				C0DE00000000000000000108 /* Clamp.swift */,
-				C0DE0000000000000000010A /* ScriptGuard.swift */,
-				C0DE0000000000000000010C /* RSSIAverager.swift */,
-				C0DE0000000000000000010E /* PasswordStore.swift */,
+				C0DE00000000000000000200 /* Calibration.swift */,
+				C0DE00000000000000000202 /* PresenceCombiner.swift */,
+				C0DE00000000000000000100 /* Core/Sanitize.swift */,
+				C0DE00000000000000000102 /* Core/Versioning.swift */,
+				C0DE00000000000000000104 /* Core/UnlockLimiter.swift */,
+				C0DE00000000000000000106 /* Core/UnlockPolicy.swift */,
+				C0DE00000000000000000108 /* Core/Clamp.swift */,
+				C0DE0000000000000000010A /* Core/ScriptGuard.swift */,
+				C0DE0000000000000000010C /* Core/RSSIAverager.swift */,
+				C0DE0000000000000000010E /* Core/PasswordStore.swift */,
 				3D953799227853E20017D8B9 /* AboutBox.xib */,
 				3D600A35226CC1A40068FB7B /* Localizable.strings */,
 				A1B2C3D4E5F600000000F001 /* PrivacyInfo.xcprivacy */,
@@ -243,7 +249,7 @@
 			attributes = {
 				LastSwiftUpdateCheck = 1020;
 				LastUpgradeCheck = 1200;
-				ORGANIZATIONNAME = "Altissnono";
+				ORGANIZATIONNAME = Altissnono;
 				TargetAttributes = {
 					3D600A3F22701A5A0068FB7B = {
 						CreatedOnToolsVersion = 10.2.1;
@@ -366,14 +372,16 @@
 				3D95379522784D550017D8B9 /* AboutBox.swift in Sources */,
 				3D6070E226DBC68E00EE4E48 /* LEDeviceInfo.swift in Sources */,
 				3D79FD7D226C335100A373C0 /* appleDeviceNames.swift in Sources */,
-				C0DE00000000000000000101 /* Sanitize.swift in Sources */,
-				C0DE00000000000000000103 /* Versioning.swift in Sources */,
-				C0DE00000000000000000105 /* UnlockLimiter.swift in Sources */,
-				C0DE00000000000000000107 /* UnlockPolicy.swift in Sources */,
-				C0DE00000000000000000109 /* Clamp.swift in Sources */,
-				C0DE0000000000000000010B /* ScriptGuard.swift in Sources */,
-				C0DE0000000000000000010D /* RSSIAverager.swift in Sources */,
-				C0DE0000000000000000010F /* PasswordStore.swift in Sources */,
+				C0DE00000000000000000201 /* Calibration.swift in Sources */,
+				C0DE00000000000000000203 /* PresenceCombiner.swift in Sources */,
+				C0DE00000000000000000101 /* Core/Sanitize.swift in Sources */,
+				C0DE00000000000000000103 /* Core/Versioning.swift in Sources */,
+				C0DE00000000000000000105 /* Core/UnlockLimiter.swift in Sources */,
+				C0DE00000000000000000107 /* Core/UnlockPolicy.swift in Sources */,
+				C0DE00000000000000000109 /* Core/Clamp.swift in Sources */,
+				C0DE0000000000000000010B /* Core/ScriptGuard.swift in Sources */,
+				C0DE0000000000000000010D /* Core/RSSIAverager.swift in Sources */,
+				C0DE0000000000000000010F /* Core/PasswordStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -429,8 +437,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_IDENTITY = "-";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = 6MNZFRZB9Q;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -452,8 +461,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_IDENTITY = "Developer ID Application";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
 				DEVELOPMENT_TEAM = 6MNZFRZB9Q;
@@ -596,8 +605,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = BLEUnlock/BLEUnlock.entitlements;
-				CODE_SIGN_IDENTITY = "-";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = 6MNZFRZB9Q;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -627,8 +637,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = BLEUnlock/BLEUnlock.entitlements;
-				CODE_SIGN_IDENTITY = "Developer ID Application";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = 6MNZFRZB9Q;
 				ENABLE_HARDENED_RUNTIME = YES;

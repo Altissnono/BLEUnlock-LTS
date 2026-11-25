@@ -3,6 +3,8 @@ import Foundation
 /// Moving average of the last `size` RSSI samples (smooths out bouncing).
 struct RSSIAverager {
     let size: Int
+    /// false = arithmetic mean (legacy behaviour); true = median (robust against isolated spikes/dropouts).
+    var useMedian = false
     private(set) var samples: [Double] = []
 
     init(size: Int = 5) { self.size = max(1, size) }
@@ -10,6 +12,12 @@ struct RSSIAverager {
     mutating func add(_ rssi: Int) -> Int {
         if samples.count >= size { samples.removeFirst() }
         samples.append(Double(rssi))
+        if useMedian {
+            let sorted = samples.sorted()
+            let n = sorted.count
+            let m = n % 2 == 1 ? sorted[n / 2] : (sorted[n / 2 - 1] + sorted[n / 2]) / 2
+            return Int(m)
+        }
         return Int(samples.reduce(0, +) / Double(samples.count))
     }
 

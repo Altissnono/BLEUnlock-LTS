@@ -33,6 +33,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     var limiter = UnlockLimiter()
     let confirmDelayMenu = NSMenu()
     let modeMenu = NSMenu()
+    let device2Menu = NSMenu()
+    var deviceDict2: [UUID: NSMenuItem] = [:]
+    var ble2: BLE?
+    var proxy2: SecondaryBLEDelegate?
+    var monitorMenuItem2: NSMenuItem?
     var unlockOnlyItems: [NSMenuItem] = []
     var updateMenuItem: NSMenuItem?
     let UNLOCK_DEFAULT = -60
@@ -42,7 +47,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     let maxAttemptsMenu = NSMenu()
 
     func menuWillOpen(_ menu: NSMenu) {
-        if menu == deviceMenu {
+        if menu == device2Menu {
+            for item in menu.items where item.action == #selector(selectSecondDevice) {
+                item.state = deviceDict2.first(where: { $0.value == item })?.key == ble2?.monitoredUUID && ble2?.monitoredUUID != nil ? .on : .off
+            }
+            ble.startScanning()
+        } else if menu == deviceMenu {
             ble.startScanning()
         } else if menu == lockRSSIMenu {
             for item in menu.items {
@@ -96,7 +106,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     }
     
     func menuDidClose(_ menu: NSMenu) {
-        if menu == deviceMenu {
+        if menu == deviceMenu || menu == device2Menu {
             ble.stopScanning()
         }
     }
@@ -118,12 +128,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         if (device.uuid == ble.monitoredUUID) {
             menuItem.state = .on
         }
+        let item2 = device2Menu.addItem(withTitle: menuItemTitle(device: device), action: #selector(selectSecondDevice), keyEquivalent: "")
+        deviceDict2[device.uuid] = item2
+        if device.uuid == ble2?.monitoredUUID { item2.state = .on }
     }
     
     func updateDevice(device: Device) {
         if let menu = deviceDict[device.uuid] {
             menu.title = menuItemTitle(device: device)
         }
+        deviceDict2[device.uuid]?.title = menuItemTitle(device: device)
     }
     
     func removeDevice(device: Device) {
@@ -131,6 +145,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
             menuItem.menu?.removeItem(menuItem)
         }
         deviceDict.removeValue(forKey: device.uuid)
+        if let item2 = deviceDict2[device.uuid] { item2.menu?.removeItem(item2) }
+        deviceDict2.removeValue(forKey: device.uuid)
     }
 
     func updateRSSI(rssi: Int?, active: Bool) {
@@ -154,6 +170,32 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
 
     func bluetoothPowerWarn() {
         errorModal(t("bluetooth_power_warn"))
+    }
+
+    /// Optional: lock when Bluetooth is turned off (the monitored device can no longer be seen).
+    func bluetoothStateChanged(on: Bool) {
+        guard !on, prefs.bool(forKey: "lockOnBluetoothOff"), ble.monitoredUUID != nil,
+              ble.lockRSSI != ble.LOCK_DISABLED, !isScreenLocked() else { return }
+        pauseNowPlaying()
+        lockOrSaveScreen()
+        notifyUser("lost")
+        runScript("lost")
+    }
+
+    func updateRSSI2(rssi: Int?) {
+        if let r = rssi {
+            monitorMenuItem2?.title = String(format: "%@: %ddBm", t("device_2"), r)
+        } else {
+            monitorMenuItem2?.title = String(format: "%@: %@", t("device_2"), t("not_detected"))
+        }
+    }
+
+    /// "Attended" = any configured device (watch or phone) is near. Unconfigured devices are ignored.
+    func combinedPresence() -> Bool {
+        return PresenceCombiner.anyPresent([
+            ble.monitoredUUID != nil ? ble.presence : nil,
+            ble2?.monitoredUUID != nil ? ble2?.presence : nil,
+        ])
     }
 
     func notifyUser(_ reason: String) {
@@ -245,6 +287,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     }
 
     func updatePresence(presence: Bool, reason: String) {
+        handlePresence(presence, reason)
+    }
+
+    func handlePresence(_ presence: Bool, _ reason: String) {
         if presence {
             if ble.unlockRSSI != ble.UNLOCK_DISABLED {
                 UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [lockNotificationId])
@@ -259,6 +305,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
                 tryUnlockScreen()
             }
         } else {
+            // With two devices the Mac is locked only when ALL of them are away.
+            guard !combinedPresence() else { return }
             if (!isScreenLocked() && ble.lockRSSI != ble.LOCK_DISABLED) {
                 pauseNowPlaying()
                 lockOrSaveScreen()
@@ -315,7 +363,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     func tryUnlockScreen() {
         guard unlockEnabled else { return }
         guard !manualLock else { return }
-        guard ble.presence else { return }
+        guard combinedPresence() else { return }
         guard ble.unlockRSSI != ble.UNLOCK_DISABLED else { return }
         guard !systemSleep else { return }
         guard !displaySleep else { return }
@@ -366,7 +414,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
 
     func currentUnlockContext() -> UnlockContext {
         return UnlockContext(
-            unlockEnabled: unlockEnabled, manualLock: manualLock, presence: ble.presence,
+            unlockEnabled: unlockEnabled, manualLock: manualLock, presence: combinedPresence(),
             unlockRSSIEnabled: ble.unlockRSSI != ble.UNLOCK_DISABLED, systemSleep: systemSleep,
             displaySleep: displaySleep, wakeWithoutUnlocking: prefs.bool(forKey: "wakeWithoutUnlocking"),
             screenLocked: isScreenLocked(), onConsole: isSessionOnConsole(),
@@ -417,6 +465,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     @objc func onSystemSleep() {
         print("system sleep")
         systemSleep = true
+        if prefs.bool(forKey: "lockOnSleep") && !isScreenLocked() {
+            // Lid closed / Mac put to sleep: lock now and do not auto-unlock until the user unlocks or the device leaves and returns.
+            manualLock = true
+            if SACLockScreenImmediate() != 0 { print("Failed to lock screen") }
+        }
         // Set activation policy to regular, so the CBCentralManager can scan for peripherals
         // when the Bluetooth will become on again.
         // This enables Dock icon but the screen is off anyway.
@@ -460,6 +513,37 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
                 menuItem.state = .off
             }
         }
+    }
+
+    @objc func selectSecondDevice(item: NSMenuItem) {
+        guard let uuid = deviceDict2.first(where: { $0.value == item })?.key, uuid != ble.monitoredUUID else { return }
+        startSecondDevice(uuid: uuid)
+        prefs.set(uuid.uuidString, forKey: "device2")
+        for (_, mi) in deviceDict2 { mi.state = (mi == item) ? .on : .off }
+    }
+
+    func startSecondDevice(uuid: UUID) {
+        if ble2 == nil {
+            let b = BLE()
+            let proxy = SecondaryBLEDelegate(owner: self)
+            b.delegate = proxy
+            proxy2 = proxy
+            ble2 = b
+            ble.link(b)
+        }
+        ble2?.startMonitor(uuid: uuid)
+        monitorMenuItem2?.title = String(format: "%@: %@", t("device_2"), t("not_detected"))
+        monitorMenuItem2?.isHidden = false
+    }
+
+    @objc func clearSecondDevice() {
+        prefs.removeObject(forKey: "device2")
+        ble.follower = nil
+        ble2?.shutdown()
+        ble2 = nil
+        proxy2 = nil
+        monitorMenuItem2?.isHidden = true
+        for (_, mi) in deviceDict2 { mi.state = .off }
     }
 
     func monitorDevice(uuid: UUID) {
@@ -731,6 +815,93 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         checkUpdate(force: true)
     }
 
+    @objc func toggleRobustFilter(_ menuItem: NSMenuItem) {
+        let value = !prefs.bool(forKey: "robustFilter")
+        prefs.set(value, forKey: "robustFilter")
+        menuItem.state = value ? .on : .off
+        ble.robustFilter = value
+    }
+
+    @objc func toggleLockOnSleep(_ menuItem: NSMenuItem) {
+        let value = !prefs.bool(forKey: "lockOnSleep")
+        prefs.set(value, forKey: "lockOnSleep")
+        menuItem.state = value ? .on : .off
+    }
+
+    @objc func toggleLockOnBluetoothOff(_ menuItem: NSMenuItem) {
+        let value = !prefs.bool(forKey: "lockOnBluetoothOff")
+        prefs.set(value, forKey: "lockOnBluetoothOff")
+        menuItem.state = value ? .on : .off
+    }
+
+    func prompt(_ msg: String, info: String, button: String) -> Bool {
+        let alert = NSAlert()
+        alert.messageText = msg
+        alert.informativeText = info
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: button)
+        alert.addButton(withTitle: t("cancel"))
+        alert.window.title = "BLEUnlock"
+        NSApp.activate(ignoringOtherApps: true)
+        return alert.runModal() == .alertFirstButtonReturn
+    }
+
+    /// Calibration assistant: measure the signal where you sit and where the Mac should lock, then suggest thresholds.
+    @objc func startCalibration() {
+        guard ble.monitoredUUID != nil else { errorModal(t("device_not_set")); return }
+        guard prompt(t("calibrate_near_title"), info: t("calibrate_near_info"), button: t("calibrate_start")) else { return }
+        measureSignal(seconds: 12) { [weak self] near in
+            guard let self = self else { return }
+            guard self.prompt(t("calibrate_far_title"), info: t("calibrate_far_info"), button: t("calibrate_start")) else { return }
+            self.measureSignal(seconds: 12) { far in self.finishCalibration(near: near, far: far) }
+        }
+    }
+
+    func measureSignal(seconds: Int, completion: @escaping ([Int]) -> Void) {
+        var samples: [Int] = []
+        ble.onRawRSSI = { samples.append($0) }
+        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 340, height: 70), styleMask: [.titled], backing: .buffered, defer: false)
+        panel.title = "BLEUnlock"
+        panel.level = .floating
+        let label = NSTextField(labelWithString: "")
+        label.alignment = .center
+        label.frame = NSRect(x: 10, y: 22, width: 320, height: 24)
+        panel.contentView?.addSubview(label)
+        panel.center()
+        NSApp.activate(ignoringOtherApps: true)
+        panel.makeKeyAndOrderFront(nil)
+        var remaining = seconds
+        label.stringValue = String(format: t("measuring"), remaining)
+        let timer = Timer(timeInterval: 1, repeats: true) { [weak self] tm in
+            remaining -= 1
+            if remaining > 0 {
+                label.stringValue = String(format: t("measuring"), remaining)
+                return
+            }
+            tm.invalidate()
+            self?.ble.onRawRSSI = nil
+            panel.close()
+            completion(samples)
+        }
+        RunLoop.main.add(timer, forMode: .common)
+    }
+
+    func finishCalibration(near: [Int], far: [Int]) {
+        do {
+            let r = try Calibration.propose(near: near, far: far, throwing: ())
+            let info = String(format: t("calibrate_result_info"), r.unlockRSSI, r.lockRSSI, r.nearMedian, r.farMedian)
+            guard prompt(t("calibrate_result_title"), info: info, button: t("apply")) else { return }
+            prefs.set(r.lockRSSI, forKey: "lockRSSI")
+            ble.lockRSSI = r.lockRSSI
+            prefs.set(r.unlockRSSI, forKey: "unlockRSSI")
+            if unlockEnabled { ble.unlockRSSI = r.unlockRSSI }
+        } catch Calibration.Failure.notEnoughSamples {
+            errorModal(t("calibrate_no_signal"))
+        } catch {
+            errorModal(t("calibrate_inseparable"))
+        }
+    }
+
     @objc func toggleVerifyFrontWindow(_ menuItem: NSMenuItem) {
         let value = !(prefs.object(forKey: "verifyFrontWindow") == nil || prefs.bool(forKey: "verifyFrontWindow"))
         prefs.set(value, forKey: "verifyFrontWindow")
@@ -862,6 +1033,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         deviceMenu.delegate = self
         deviceMenu.addItem(withTitle: t("scanning"), action: nil, keyEquivalent: "")
 
+        let secondItem = mainMenu.addItem(withTitle: t("second_device"), action: nil, keyEquivalent: "")
+        secondItem.submenu = device2Menu
+        symbol(secondItem, "applewatch")
+        device2Menu.delegate = self
+        add(device2Menu, t("none"), #selector(clearSecondDevice))
+        device2Menu.addItem(NSMenuItem.separator())
+        device2Menu.addItem(withTitle: t("scanning"), action: nil, keyEquivalent: "")
+        monitorMenuItem2 = mainMenu.addItem(withTitle: "", action: nil, keyEquivalent: "")
+        symbol(monitorMenuItem2!, "applewatch")
+        monitorMenuItem2?.isHidden = true
+
         // Mode
         _ = submenu(t("mode"), "lock.shield", modeMenu)
         add(modeMenu, t("mode_full"), #selector(setMode), tag: 0)
@@ -907,6 +1089,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         unlockOnlyItems.append(confirmItem)
 
         proximityMenu.addItem(NSMenuItem.separator())
+        add(proximityMenu, t("calibrate"), #selector(startCalibration), symbol: "scope")
+        add(proximityMenu, t("robust_filter"), #selector(toggleRobustFilter), symbol: "waveform.path.ecg", state: on("robustFilter"))
         add(proximityMenu, t("set_rssi_threshold"), #selector(setRSSIThreshold), symbol: "slider.horizontal.3")
 
         // Security
@@ -934,6 +1118,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         add(optionsMenu, t("pause_now_playing"), #selector(togglePauseNowPlaying), symbol: "pause.circle", state: on("pauseItunes"))
         add(optionsMenu, t("use_screensaver_to_lock"), #selector(toggleUseScreensaver), symbol: "display", state: on("screensaver"))
         add(optionsMenu, t("sleep_display"), #selector(toggleSleepDisplay), symbol: "moon", state: on("sleepDisplay"))
+        add(optionsMenu, t("lock_on_sleep"), #selector(toggleLockOnSleep), symbol: "laptopcomputer", state: on("lockOnSleep"))
+        add(optionsMenu, t("lock_on_bt_off"), #selector(toggleLockOnBluetoothOff), symbol: "bolt.horizontal.circle", state: on("lockOnBluetoothOff"))
         add(optionsMenu, t("passive_mode"), #selector(togglePassiveMode), symbol: "eye.slash", state: on("passiveMode"))
         optionsMenu.addItem(NSMenuItem.separator())
         add(optionsMenu, t("notifications"), #selector(toggleNotifications), symbol: "bell", state: notifOn)
@@ -995,6 +1181,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
             ble.signalTimeout = Double(max(30, min(600, timeout)))
         }
         ble.setPassiveMode(prefs.bool(forKey: "passiveMode"))
+        ble.robustFilter = prefs.bool(forKey: "robustFilter")
         let thresholdRSSI = prefs.integer(forKey: "thresholdRSSI")
         if thresholdRSSI != 0 {
             ble.thresholdRSSI = max(-100, min(-1, thresholdRSSI))
@@ -1004,6 +1191,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
             ble.proximityTimeout = Double(max(2, min(300, lockDelay)))
         }
 
+        if let str2 = prefs.string(forKey: "device2"), let uuid2 = UUID(uuidString: str2), uuid2 != ble.monitoredUUID {
+            startSecondDevice(uuid: uuid2)
+        }
         UNUserNotificationCenter.current().delegate = self
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
 
@@ -1034,4 +1224,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     
     func applicationWillTerminate(_ aNotification: Notification) {
     }
+}
+
+
+/// Delegate of the second BLE instance: forwards presence and signal to the app; ignores device-list callbacks.
+final class SecondaryBLEDelegate: BLEDelegate {
+    weak var owner: AppDelegate?
+    init(owner: AppDelegate) { self.owner = owner }
+    func newDevice(device: Device) {}
+    func updateDevice(device: Device) {}
+    func removeDevice(device: Device) {}
+    func updateRSSI(rssi: Int?, active: Bool) { owner?.updateRSSI2(rssi: rssi) }
+    func updatePresence(presence: Bool, reason: String) { owner?.handlePresence(presence, reason) }
+    func bluetoothPowerWarn() {}
+    func bluetoothStateChanged(on: Bool) {}
 }

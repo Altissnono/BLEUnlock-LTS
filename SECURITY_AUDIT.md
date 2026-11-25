@@ -244,3 +244,13 @@ For a local proximity‑unlock utility the implementation is **careful and small
 - **Impact:** a failed/unavailable read looked like "the device is touching the Mac": it cancelled the pending lock timer and reset the "signal lost" timer, and `lastReadAt` kept active mode alive. Result: the Mac may fail to lock after the device (e.g. a Watch) walked away, or treat a gone device as present for unlocking.
 - **Fix:** `validRSSI()` (Core, unit-tested) accepts only −127…−1 dBm; failed or implausible reads are ignored — they no longer reset timers, so the existing "signal lost" timeout locks the Mac.
 - **Residual:** a BLE tag that reports exactly 0 dBm legitimately would now be ignored (considered implausible). RSSI itself remains forgeable (V‑01).
+
+---
+
+# Addendum — 3.2.0 features and their security impact
+
+- **Second device (any-near unlocks).** Unlocking now needs *any* configured device near, so the attack surface is the union of both devices (V‑01 applies to each). Locking needs *all* devices away. Unconfigured devices are ignored (`PresenceCombiner`, unit-tested). Settings (thresholds, delays, filter, passive mode) are mirrored to the second instance. **Not tested with real devices.** Users who care most about unlock security should keep a single device or use *Lock only*.
+- **Calibration** only proposes values (pure function `Calibration`, unit-tested: ≥ 4 valid samples, ≥ 10 dB gap, 5 dB hysteresis, range-clamped); nothing is applied without the user's confirmation. Invalid 127/0 readings are discarded. Poorly separated measurements are rejected rather than guessed.
+- **Robust filter** (median): off by default; reduces the effect of single outliers; slightly slower to follow brief true changes. Behaviour with real Watch/iPhone signals **not measured**.
+- **Lock on sleep / Bluetooth off** (off by default) can only *increase* locking. After a sleep lock `manualLock` blocks auto-unlock until a manual unlock or a device leave/return.
+- **Not implemented:** a second factor / confirmation gesture before auto-unlock. macOS gives no reliable way to prompt biometrics on the lock screen; a real second factor needs an iPhone companion app (out of scope). Notarisation remains pending on the owner's Developer ID certificate.
