@@ -98,3 +98,5 @@
 "second_device" = "第二台设备";
 "none" = "无";
 "device_2" = "设备 2";
+"device_tip" = "提示：将 iPhone 或 Apple Watch 靠近 Mac，它会排到最上面";
+"other_devices" = "其他设备（%d）";

@@ -35,6 +35,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     let modeMenu = NSMenu()
     let device2Menu = NSMenu()
     var deviceDict2: [UUID: NSMenuItem] = [:]
+    var knownDevices: [UUID: Device] = [:]
+    var layoutKeys: [UUID: String] = [:]
+    var rebuildTimer: Timer?
     var ble2: BLE?
     var proxy2: SecondaryBLEDelegate?
     var monitorMenuItem2: NSMenuItem?
@@ -47,12 +50,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     let maxAttemptsMenu = NSMenu()
 
     func menuWillOpen(_ menu: NSMenu) {
-        if menu == device2Menu {
-            for item in menu.items where item.action == #selector(selectSecondDevice) {
-                item.state = deviceDict2.first(where: { $0.value == item })?.key == ble2?.monitoredUUID && ble2?.monitoredUUID != nil ? .on : .off
-            }
-            ble.startScanning()
-        } else if menu == deviceMenu {
+        if menu == device2Menu || menu == deviceMenu {
+            rebuildDeviceMenus()   // refresh order by current signal strength
             ble.startScanning()
         } else if menu == lockRSSIMenu {
             for item in menu.items {
@@ -122,31 +121,89 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         return String(format: "%@ (%ddBm)", desc, device.rssi)
     }
     
+    // MARK: Device lists (sorted, grouped, with icons)
+
+    func layoutKey(_ device: Device) -> String {
+        return "\(device.kind.rawValue)|\(!DeviceCatalog.looksLikeRawIdentifier(device.description))"
+    }
+
     func newDevice(device: Device) {
-        let menuItem = deviceMenu.addItem(withTitle: menuItemTitle(device: device), action:#selector(selectDevice), keyEquivalent: "")
-        deviceDict[device.uuid] = menuItem
-        if (device.uuid == ble.monitoredUUID) {
-            menuItem.state = .on
-        }
-        let item2 = device2Menu.addItem(withTitle: menuItemTitle(device: device), action: #selector(selectSecondDevice), keyEquivalent: "")
-        deviceDict2[device.uuid] = item2
-        if device.uuid == ble2?.monitoredUUID { item2.state = .on }
+        knownDevices[device.uuid] = device
+        layoutKeys[device.uuid] = layoutKey(device)
+        scheduleDeviceListRebuild()
     }
-    
+
     func updateDevice(device: Device) {
-        if let menu = deviceDict[device.uuid] {
-            menu.title = menuItemTitle(device: device)
+        knownDevices[device.uuid] = device
+        // Name/model arrive after the first sighting: re-layout only if the device's group changed.
+        let key = layoutKey(device)
+        if layoutKeys[device.uuid] != key {
+            layoutKeys[device.uuid] = key
+            scheduleDeviceListRebuild()
+            return
         }
-        deviceDict2[device.uuid]?.title = menuItemTitle(device: device)
+        let title = menuItemTitle(device: device)
+        deviceDict[device.uuid]?.title = title
+        deviceDict2[device.uuid]?.title = title
     }
-    
+
     func removeDevice(device: Device) {
-        if let menuItem = deviceDict[device.uuid] {
-            menuItem.menu?.removeItem(menuItem)
+        knownDevices.removeValue(forKey: device.uuid)
+        layoutKeys.removeValue(forKey: device.uuid)
+        scheduleDeviceListRebuild()
+    }
+
+    /// Debounced: several devices appear within a fraction of a second when the menu opens.
+    func scheduleDeviceListRebuild() {
+        rebuildTimer?.invalidate()
+        let t = Timer(timeInterval: 0.8, repeats: false) { [weak self] _ in self?.rebuildDeviceMenus() }
+        RunLoop.main.add(t, forMode: .common)
+        rebuildTimer = t
+    }
+
+    func rebuildDeviceMenus() {
+        let entries = knownDevices.values.map { d in
+            DeviceEntry(id: d.uuid, kind: d.kind, named: !DeviceCatalog.looksLikeRawIdentifier(d.description),
+                        rssi: d.rssi, title: menuItemTitle(device: d))
         }
-        deviceDict.removeValue(forKey: device.uuid)
-        if let item2 = deviceDict2[device.uuid] { item2.menu?.removeItem(item2) }
-        deviceDict2.removeValue(forKey: device.uuid)
+        let layout = DeviceCatalog.partition(entries)
+        deviceDict = fill(deviceMenu, layout: layout, selected: ble.monitoredUUID, action: #selector(selectDevice), withNone: false)
+        deviceDict2 = fill(device2Menu, layout: layout, selected: ble2?.monitoredUUID, action: #selector(selectSecondDevice), withNone: true)
+    }
+
+    func fill(_ menu: NSMenu, layout: (personal: [DeviceEntry], others: [DeviceEntry]), selected: UUID?,
+              action: Selector, withNone: Bool) -> [UUID: NSMenuItem] {
+        var dict: [UUID: NSMenuItem] = [:]
+        menu.removeAllItems()
+        if withNone {
+            add(menu, t("none"), #selector(clearSecondDevice), symbol: "xmark.circle")
+            menu.addItem(NSMenuItem.separator())
+        }
+        let tip = menu.addItem(withTitle: t("device_tip"), action: nil, keyEquivalent: "")
+        tip.isEnabled = false
+        symbol(tip, "lightbulb")
+        menu.addItem(NSMenuItem.separator())
+
+        func make(_ e: DeviceEntry, in m: NSMenu) {
+            let item = m.addItem(withTitle: e.title, action: action, keyEquivalent: "")
+            symbol(item, DeviceCatalog.symbol(for: e.kind))
+            if e.id == selected { item.state = .on }
+            dict[e.id] = item
+        }
+        if layout.personal.isEmpty && layout.others.isEmpty {
+            menu.addItem(withTitle: t("scanning"), action: nil, keyEquivalent: "").isEnabled = false
+            return dict
+        }
+        for e in layout.personal { make(e, in: menu) }
+        if !layout.others.isEmpty {
+            if !layout.personal.isEmpty { menu.addItem(NSMenuItem.separator()) }
+            let sub = NSMenu()
+            let parent = menu.addItem(withTitle: String(format: t("other_devices"), layout.others.count), action: nil, keyEquivalent: "")
+            parent.submenu = sub
+            symbol(parent, "ellipsis.circle")
+            for e in layout.others { make(e, in: sub) }
+        }
+        return dict
     }
 
     func updateRSSI(rssi: Int?, active: Bool) {
@@ -543,7 +600,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         ble2 = nil
         proxy2 = nil
         monitorMenuItem2?.isHidden = true
-        for (_, mi) in deviceDict2 { mi.state = .off }
+        rebuildDeviceMenus()
     }
 
     func monitorDevice(uuid: UUID) {
@@ -1031,15 +1088,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         // Device
         _ = submenu(t("device"), "iphone", deviceMenu)
         deviceMenu.delegate = self
-        deviceMenu.addItem(withTitle: t("scanning"), action: nil, keyEquivalent: "")
+        rebuildDeviceMenus()
 
         let secondItem = mainMenu.addItem(withTitle: t("second_device"), action: nil, keyEquivalent: "")
         secondItem.submenu = device2Menu
         symbol(secondItem, "applewatch")
         device2Menu.delegate = self
-        add(device2Menu, t("none"), #selector(clearSecondDevice))
-        device2Menu.addItem(NSMenuItem.separator())
-        device2Menu.addItem(withTitle: t("scanning"), action: nil, keyEquivalent: "")
+        rebuildDeviceMenus()
         monitorMenuItem2 = mainMenu.addItem(withTitle: "", action: nil, keyEquivalent: "")
         symbol(monitorMenuItem2!, "applewatch")
         monitorMenuItem2?.isHidden = true

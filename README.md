@@ -256,6 +256,9 @@ Copyright © 2019-2022 Takeshi Sone. LTS modifications © 2026 Altissnono.
 
 ## What's new in LTS
 
+### 3.2.1
+- **Readable device lists** (*Device* and *Second Device*): iPhone / Apple Watch / iPad are listed first with icons, strongest signal on top; other named devices and anonymous ones (raw UUIDs) are folded into an *Other devices (N)* submenu. Apple model identifiers get readable names (e.g. `Watch7,5` → "Apple Watch (Watch7,5)"). Tip: hold your device next to the Mac — it jumps to the top. 49 unit tests.
+
 ### 3.2.0
 - **Signal calibration assistant** (*Proximity → Calibrate Signal…*): measures the signal where you sit and where the Mac should lock (12 s each) and suggests the lock/unlock thresholds.
 - **Second device** (*Second Device*): monitor an Apple Watch **and** an iPhone. The Mac unlocks when *either* is near and locks only when *both* are away.

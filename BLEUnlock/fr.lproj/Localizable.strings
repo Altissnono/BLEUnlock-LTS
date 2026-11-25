@@ -98,3 +98,5 @@
 "second_device" = "Second appareil";
 "none" = "Aucun";
 "device_2" = "Appareil 2";
+"device_tip" = "Astuce : approchez votre iPhone ou Apple Watch du Mac — il passe en haut";
+"other_devices" = "Autres appareils (%d)";

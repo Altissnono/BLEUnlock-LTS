@@ -98,3 +98,5 @@
 "second_device" = "Andre enhet";
 "none" = "Ingen";
 "device_2" = "Enhet 2";
+"device_tip" = "Tips: hold iPhone eller Apple Watch nær Macen — den havner øverst";
+"other_devices" = "Andre enheter (%d)";

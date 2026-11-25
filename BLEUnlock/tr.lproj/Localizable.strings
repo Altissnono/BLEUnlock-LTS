@@ -98,3 +98,5 @@
 "second_device" = "İkinci Cihaz";
 "none" = "Yok";
 "device_2" = "Cihaz 2";
+"device_tip" = "İpucu: iPhone veya Apple Watch’ınızı Mac’e yaklaştırın — en üste çıkar";
+"other_devices" = "Diğer cihazlar (%d)";

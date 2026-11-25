@@ -98,3 +98,5 @@
 "second_device" = "2台目のデバイス";
 "none" = "なし";
 "device_2" = "デバイス2";
+"device_tip" = "ヒント：iPhoneやApple WatchをMacに近づけると、一番上に表示されます";
+"other_devices" = "その他のデバイス（%d）";

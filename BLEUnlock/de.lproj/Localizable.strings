@@ -98,3 +98,5 @@
 "second_device" = "Zweites Gerät";
 "none" = "Keines";
 "device_2" = "Gerät 2";
+"device_tip" = "Tipp: Halten Sie iPhone oder Apple Watch an den Mac — es steht dann ganz oben";
+"other_devices" = "Andere Geräte (%d)";

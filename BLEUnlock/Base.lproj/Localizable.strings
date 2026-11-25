@@ -98,3 +98,5 @@
 "second_device" = "Second Device";
 "none" = "None";
 "device_2" = "Device 2";
+"device_tip" = "Tip: hold your iPhone or Apple Watch next to the Mac — it moves to the top";
+"other_devices" = "Other devices (%d)";

@@ -220,6 +220,52 @@ final class PresenceCombinerTests: XCTestCase {
     }
 }
 
+final class DeviceCatalogTests: XCTestCase {
+    func testFriendlyAppleModels() {
+        XCTAssertEqual(DeviceCatalog.friendlyAppleModel("Watch7,5"), "Apple Watch (Watch7,5)")
+        XCTAssertEqual(DeviceCatalog.friendlyAppleModel("iPhone19,7"), "iPhone (iPhone19,7)")
+        XCTAssertEqual(DeviceCatalog.friendlyAppleModel("iPad15,5"), "iPad (iPad15,5)")
+        XCTAssertEqual(DeviceCatalog.friendlyAppleModel("Mac14,13"), "Mac (Mac14,13)")
+        XCTAssertEqual(DeviceCatalog.friendlyAppleModel("MacBookPro18,1"), "MacBook Pro (MacBookPro18,1)")
+        XCTAssertEqual(DeviceCatalog.friendlyAppleModel("AudioAccessory6,1"), "HomePod (AudioAccessory6,1)")
+        XCTAssertNil(DeviceCatalog.friendlyAppleModel("Foo"))
+        XCTAssertNil(DeviceCatalog.friendlyAppleModel("Watch"))
+        XCTAssertNil(DeviceCatalog.friendlyAppleModel("<script>1,2"))
+    }
+    func testKindFromModelAndName() {
+        XCTAssertEqual(DeviceCatalog.kind(manufacturer: "Apple Inc.", model: "Watch7,5", name: nil), .watch)
+        XCTAssertEqual(DeviceCatalog.kind(manufacturer: "Apple Inc.", model: "iPhone19,7", name: nil), .phone)
+        XCTAssertEqual(DeviceCatalog.kind(manufacturer: nil, model: nil, name: "iPhone de Nolann"), .phone)
+        XCTAssertEqual(DeviceCatalog.kind(manufacturer: nil, model: nil, name: "Apple Watch de Zoë"), .watch)
+        XCTAssertEqual(DeviceCatalog.kind(manufacturer: nil, model: nil, name: "Montre de Léo"), .watch)
+        XCTAssertEqual(DeviceCatalog.kind(manufacturer: nil, model: nil, name: "AirPods Max de Nolann"), .audio)
+        XCTAssertEqual(DeviceCatalog.kind(manufacturer: nil, model: nil, name: "Clés de Nolann voiture"), .tag)
+        XCTAssertEqual(DeviceCatalog.kind(manufacturer: nil, model: nil, name: "Govee_H6099_5979"), .other)
+        XCTAssertEqual(DeviceCatalog.kind(manufacturer: nil, model: nil, name: nil), .other)
+    }
+    func testRawIdentifierDetection() {
+        XCTAssertTrue(DeviceCatalog.looksLikeRawIdentifier("6A89725E-769F-2549-D53D-F3CF38B2B24D"))
+        XCTAssertTrue(DeviceCatalog.looksLikeRawIdentifier("AA:BB:CC:DD:EE:FF"))
+        XCTAssertFalse(DeviceCatalog.looksLikeRawIdentifier("iPhone 11"))
+    }
+    func testPartitionPutsWatchAndPhoneFirstStrongestOnTop() {
+        func e(_ kind: DeviceKind, _ rssi: Int, _ title: String, named: Bool = true) -> DeviceEntry {
+            DeviceEntry(id: UUID(), kind: kind, named: named, rssi: rssi, title: title)
+        }
+        let list = [e(.other, -40, "UUID-1", named: false), e(.audio, -39, "AirPods"), e(.phone, -33, "iPhone 11"),
+                    e(.watch, -45, "Apple Watch"), e(.tablet, -72, "iPad"), e(.other, -61, "Aqara"), e(.phone, -42, "iPhone 17")]
+        let r = DeviceCatalog.partition(list)
+        XCTAssertEqual(r.personal.map { $0.title }, ["iPhone 11", "iPhone 17", "Apple Watch", "iPad"])
+        XCTAssertEqual(r.others.map { $0.title }, ["AirPods", "Aqara", "UUID-1"])   // named first, anonymous last
+    }
+    func testPartitionIsStableOnTies() {
+        let a = DeviceEntry(id: UUID(), kind: .phone, named: true, rssi: -50, title: "B")
+        let b = DeviceEntry(id: UUID(), kind: .phone, named: true, rssi: -50, title: "A")
+        XCTAssertEqual(DeviceCatalog.partition([a, b]).personal.map { $0.title }, ["A", "B"])
+        XCTAssertTrue(DeviceCatalog.partition([]).personal.isEmpty)
+    }
+}
+
 final class ScriptGuardTests: XCTestCase {
     private var dir: URL!
     override func setUpWithError() throws {

@@ -60,8 +60,8 @@ class Device: NSObject {
             }
             if let manu = manufacture {
                 if let mod = model {
-                    if manu == "Apple Inc." && appleDeviceNames[mod] != nil {
-                        return appleDeviceNames[mod]!
+                    if manu == "Apple Inc." {
+                        return appleDeviceNames[mod] ?? DeviceCatalog.friendlyAppleModel(mod) ?? String(format: "%@/%@", manu, mod)
                     }
                     return String(format: "%@/%@", manu, mod)
                 } else {
@@ -98,6 +98,11 @@ class Device: NSObject {
             }
             return uuid.description
         }
+    }
+
+    var kind: DeviceKind {
+        _ = description   // resolves the name/MAC lazily from the Bluetooth caches first
+        return DeviceCatalog.kind(manufacturer: manufacture, model: model, name: blName ?? peripheral?.name)
     }
 
     init(uuid _uuid: UUID) {
