@@ -1,5 +1,7 @@
 # BLEUnlock
 
+[English](README.md) | [Français](README.fr.md) | [Español](README.es.md) | [Deutsch](README.de.md) | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [Türkçe](README.tr.md) | [Svenska](README.sv.md) | [Dansk](README.da.md) | [Norsk](README.nb.md)
+
 ## 🇪🇺 BLEUnlock LTS: privacy-first, EU-friendly proximity lock for macOS
 
 *Not on the Mac App Store. Free and open source (MIT).*

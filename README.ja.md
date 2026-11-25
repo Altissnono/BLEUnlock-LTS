@@ -1,4 +1,6 @@
-# BLEUnlock
+# 🇪🇺 BLEUnlock LTS
+
+[English](README.md) | [Français](README.fr.md) | [Español](README.es.md) | [Deutsch](README.de.md) | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [Türkçe](README.tr.md) | [Svenska](README.sv.md) | [Dansk](README.da.md) | [Norsk](README.nb.md)
 
 ![CI](https://github.com/Altissnono/BLEUnlock-LTS/actions/workflows/test.yml/badge.svg)
 [![Latest release](https://img.shields.io/github/v/release/Altissnono/BLEUnlock-LTS?display_name=tag&cacheSeconds=300)](https://github.com/Altissnono/BLEUnlock-LTS/releases/latest)
@@ -21,12 +23,31 @@ BLEUnlockはiPhone, Apple Watchやその他のBluetooth Low Energyデバイス�
 ## 必要なもの
 
 - Bluetooth Low EnergyをサポートするMac
-- macOS 10.13 (High Sierra) 以上
+- macOS 12 (Monterey) 以上
 - iPhone 5s以上, Apple Watch (すべて), または定期的に信号を[静的なMACアドレス](#macアドレスについて)から送信するBLEデバイス
 
 ## インストール
 
 [Releases](https://github.com/Altissnono/BLEUnlock-LTS/releases)からzipファイルをダウンロードし、解凍してアプリケーションフォルダに移動します。
+
+## LTS版の新機能とプライバシー
+
+- 2つのモード: **ロック＆ロック解除** または **ロックのみ**（パスワードを保存せず、アクセシビリティの許可も不要）。
+- 較正アシスタント（メニュー → **近接** → **信号を調整…**）、2台目のデバイス（**2台目のデバイス**、Apple WatchとiPhone）、堅牢な信号フィルタ。
+- 追加オプション: スリープ／蓋を閉じたときのロック、Bluetoothがオフになったときのロック。
+- 10言語に対応。
+
+### プライバシー（GDPR）
+
+- アカウント、解析、広告、クラッシュレポートはありません。すべてMac上に留まります。
+- アップデートの確認は任意です（`api.github.com` への1回のHTTPSリクエスト。GitHubにIPアドレスが見えます）。
+- ワンクリックで削除: セキュリティ → すべてのデータを消去…。
+- パスワード（ロック解除モードのみ）はmacOSのキーチェーンに、このデバイスだけに保存されます。
+- サードパーティ依存なし、Hardened Runtime、セキュリティロジックの単体テストあり。詳細は [PRIVACY.md](PRIVACY.md) をご覧ください（技術的な説明であり、法的な認証ではありません）。
+
+> アプリは公証されていません。初回起動時は右クリックして**開く**を選んでください（または `xattr -dr com.apple.quarantine /Applications/BLEUnlock.app`）。zipは `SHA256SUMS.txt` か、`gh attestation verify BLEUnlock-<version>.zip --repo Altissnono/BLEUnlock-LTS` で確認できます。
+
+> Bluetoothの信号は不安定です（Apple Watchは測定ごとに25〜30 dB変動することがあります）。しきい値は「近い」「遠い」の値から10 dB以上離してください。無信号タイムアウトを5秒未満にすると誤ってロックされることがあります。信号による解除は、適切な機器を持つ人に模倣される可能性があります。重要な環境では **ロックのみ** を選んでください。
 
 ## セットアップ
 
